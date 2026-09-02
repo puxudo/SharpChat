@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SharpChat.Api.Data;
 using SharpChat.Api.Models;
 
@@ -6,11 +7,11 @@ namespace SharpChat.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersControllers : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
 
-        public UsersControllers(AppDbContext db)
+        public UsersController(AppDbContext db)
         {
             _db = db;
         }
@@ -29,7 +30,53 @@ namespace SharpChat.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(Guid id)
         {
-            throw new NotImplementedException();
+            var user = await _db.Users.FindAsync(id);
+
+            if (user is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(user);
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<User>>> GetAllUsers()
+        {
+            var users = await _db.Users.ToListAsync();
+            return Ok(users);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] CreateUserRequest request)
+        {
+            var user = await _db.Users.FindAsync(id);
+
+            if (user is null)
+            {
+                return NotFound();
+            }
+
+            user.Username = request.Username;
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            var user = await _db.Users.FindAsync(id);
+
+            if (user is null)
+            {
+                return NotFound();
+            }
+
+            _db.Users.Remove(user);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 
