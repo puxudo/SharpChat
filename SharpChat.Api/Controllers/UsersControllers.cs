@@ -78,6 +78,21 @@ namespace SharpChat.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<User>> Login([FromBody] CreateUserRequest request)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+
+            if (user is null)
+            {
+                user = new User { Id = Guid.NewGuid(), Username = request.Username };
+
+                _db.Users.Add(user);
+                await _db.SaveChangesAsync();
+            }
+            return Ok(user);
+        }
     }
 
     public record CreateUserRequest(string Username);

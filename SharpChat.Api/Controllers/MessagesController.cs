@@ -58,6 +58,20 @@ namespace SharpChat.Api.Controllers
             return Ok(messages);
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMessage(Guid id)
+        {
+            var message = await _db.Messages.FindAsync(id);
+            if (message == null)
+            {
+                return NotFound();
+            }
+            _db.Messages.Remove(message);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         public record SendMessageRequest(Guid SenderId, Guid RecipientId, string Content);
     }
 }
