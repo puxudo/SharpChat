@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SharpChat.Api.Data;
+using SharpChat.Api.Hubs;
 using SharpChat.Api.Models;
 
 namespace SharpChat.Api.Controllers
@@ -10,10 +12,12 @@ namespace SharpChat.Api.Controllers
     public class MessagesController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public MessagesController(AppDbContext db)
+        public MessagesController(AppDbContext db, IHubContext<ChatHub> hubContext)
         {
             _db = db;
+            _hubContext = hubContext;
         }
 
         [HttpPost]
@@ -34,9 +38,14 @@ namespace SharpChat.Api.Controllers
                 RecipientId = request.RecipientId,
                 Content = request.Content,
             };
-
+            // pushing the message on db
             _db.Messages.Add(message);
             await _db.SaveChangesAsync();
+
+            //pushing real-time event to the recipient's signalR group
+            await _hubContext
+                .Clients.Group(request.RecipientId.ToString())
+                .SendAsync("ReceiveMessage", message);
 
             return Ok(message);
         }

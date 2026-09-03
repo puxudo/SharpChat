@@ -68,6 +68,7 @@ function ChatScreen({ me, otherUsername }) {
             .build();
 
         connection.on("ReceiveMessage", (message) => {
+            console.log("Received push: ", message);
             setMessages((prev) => [...prev, message]);
         });
 
@@ -140,7 +141,7 @@ function App() {
 
     const otherUsername = me.username === "alice" ? "cbug" : "alice";
 
-    return <ChatScreen me={me} otherUsername={otherUsern} />;
+    return <ChatScreen me={me} otherUsername={otherUsername} />;
 }
 
 export default App;
