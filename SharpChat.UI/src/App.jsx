@@ -8,8 +8,30 @@ import {
     MessageInput,
 } from "@chatscope/chat-ui-kit-react";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
+import "./App.css";
+import ContactList from "./ContactList";
 
 const API_BASE = "http://localhost:5217";
+
+const AVATAR_COLORS = ["#6a5cff", "#3ec6e0", "#ff7a7a", "#ffb84d", "#4dd68a", "#c37bff"];
+
+function colorForName(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function Avatar({ username, size = "" }) {
+    const initial = username?.[0]?.toUpperCase() ?? "?";
+    return (
+        <div
+            className={`avatar-circle ${size}`}
+            style={{ background: colorForName(username ?? "") }}
+        >
+            {initial}
+        </div>
+    );
+}
 
 function LoginScreen({ onLogin }) {
     const [username, setUsername] = useState("");
@@ -29,37 +51,28 @@ function LoginScreen({ onLogin }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ padding: "2rem" }}>
-            <h2>Log in to SharpChat</h2>
-            <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter a username"
-            />
-            <button type="submit">Log in</button>
-        </form>
+        <div className="login-screen">
+            <form onSubmit={handleSubmit} className="login-card">
+                <h2>Log in to SharpChat</h2>
+                <span className="login-tagline">Pick a username to start chatting</span>
+                <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter a username"
+                    dir="auto"
+                />
+                <button type="submit">Log in</button>
+            </form>
+        </div>
     );
 }
 
-function ChatScreen({ me, otherUsername }) {
-    const [otherUserId, setOtherUserId] = useState(null);
+function ChatScreen({ me, otherUser, onBack }) {
     const [messages, setMessages] = useState([]);
     const connectionRef = useRef(null);
 
     useEffect(() => {
-        fetch(`${API_BASE}/api/users/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: otherUsername }),
-        })
-            .then((res) => res.json())
-            .then((user) => setOtherUserId(user.id));
-    }, [otherUsername]);
-
-    useEffect(() => {
-        if (!otherUserId) return;
-
-        fetch(`${API_BASE}/api/messages/conversation?userA=${me.id}&userB=${otherUserId}`)
+        fetch(`${API_BASE}/api/messages/conversation?userA=${me.id}&userB=${otherUser.id}`)
             .then((res) => res.json())
             .then((data) => setMessages(data));
 
@@ -68,7 +81,6 @@ function ChatScreen({ me, otherUsername }) {
             .build();
 
         connection.on("ReceiveMessage", (message) => {
-            console.log("Received push: ", message);
             setMessages((prev) => [...prev, message]);
         });
 
@@ -81,7 +93,7 @@ function ChatScreen({ me, otherUsername }) {
         return () => {
             connection.stop();
         };
-    }, [otherUserId, me.id]);
+    }, [otherUser.id, me.id]);
 
     const handleSend = async (text) => {
         try {
@@ -90,7 +102,7 @@ function ChatScreen({ me, otherUsername }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     senderId: me.id,
-                    recipientId: otherUserId,
+                    recipientId: otherUser.id,
                     content: text,
                 }),
             });
@@ -107,10 +119,18 @@ function ChatScreen({ me, otherUsername }) {
         }
     };
 
-    if (!otherUserId) return <p>Loading conversation...</p>;
-
     return (
-        <div style={{ height: "100vh" }}>
+        <div className="chat-body">
+            <div className="chat-header">
+                <button className="back-btn" onClick={onBack} aria-label="Back">
+                    &larr;
+                </button>
+                <Avatar username={otherUser.username} size="small" />
+                <div>
+                    <div className="chat-title">{otherUser.username}</div>
+                    <div className="chat-subtitle">Active now</div>
+                </div>
+            </div>
             <MainContainer>
                 <ChatContainer>
                     <MessageList>
@@ -134,14 +154,29 @@ function ChatScreen({ me, otherUsername }) {
 
 function App() {
     const [me, setMe] = useState(null);
+    const [otherUser, setOtherUser] = useState(null);
 
     if (!me) {
         return <LoginScreen onLogin={setMe} />;
     }
 
-    const otherUsername = me.username === "alice" ? "cbug" : "alice";
+    if (!otherUser) {
+        return (
+            <div className="app-shell">
+                <ContactList me={me} onSelectContact={setOtherUser} />
+            </div>
+        );
+    }
 
-    return <ChatScreen me={me} otherUsername={otherUsername} />;
+    return (
+        <div className="app-shell">
+            <ChatScreen
+                me={me}
+                otherUser={otherUser}
+                onBack={() => setOtherUser(null)}
+            />
+        </div>
+    );
 }
 
 export default App;
