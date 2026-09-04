@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SharpChat.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+310bbc3447e918a7f27234303ff5407d51cec026")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e3ca39a05d68d239e1122421ccc9be31d9a8a3c3")]
 [assembly: System.Reflection.AssemblyProductAttribute("SharpChat.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SharpChat.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

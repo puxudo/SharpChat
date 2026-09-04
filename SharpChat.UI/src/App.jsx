@@ -67,8 +67,33 @@ function LoginScreen({ onLogin }) {
     );
 }
 
+function ContextMenu({ x, y, onDelete, onClose }) {
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) onClose();
+        };
+        window.addEventListener("mousedown", handleOutside);
+        window.addEventListener("contextmenu", handleOutside);
+        return () => {
+            window.removeEventListener("mousedown", handleOutside);
+            window.removeEventListener("contextmenu", handleOutside);
+        };
+    }, [onClose]);
+
+    return (
+        <div ref={ref} className="context-menu" style={{ top: y, left: x }}>
+            <button className="context-menu-item danger" onClick={onDelete}>
+                Delete message
+            </button>
+        </div>
+    );
+}
+
 function ChatScreen({ me, otherUser, onBack }) {
     const [messages, setMessages] = useState([]);
+    const [menu, setMenu] = useState(null); // { x, y, message } | null
     const connectionRef = useRef(null);
 
     useEffect(() => {
@@ -82,6 +107,10 @@ function ChatScreen({ me, otherUser, onBack }) {
 
         connection.on("ReceiveMessage", (message) => {
             setMessages((prev) => [...prev, message]);
+        });
+
+        connection.on("MessageDeleted", (id) => {
+            setMessages((prev) => prev.filter((m) => m.id !== id));
         });
 
         connection.start().then(() => {
@@ -119,6 +148,32 @@ function ChatScreen({ me, otherUser, onBack }) {
         }
     };
 
+    const handleContextMenu = (e, message) => {
+        e.preventDefault();
+        if (message.senderId !== me.id) return; // only allow deleting your own messages
+        setMenu({ x: e.clientX, y: e.clientY, message });
+    };
+
+    const handleDelete = async () => {
+        const messageId = menu.message.id;
+        setMenu(null);
+
+        try {
+            const res = await fetch(`${API_BASE}/api/messages/${messageId}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) {
+                console.error("Delete failed:", res.status, await res.text());
+                return;
+            }
+
+            setMessages((prev) => prev.filter((m) => m.id !== messageId));
+        } catch (err) {
+            console.error("Delete threw an error:", err);
+        }
+    };
+
     return (
         <div className="chat-body">
             <div className="chat-header">
@@ -135,19 +190,29 @@ function ChatScreen({ me, otherUser, onBack }) {
                 <ChatContainer>
                     <MessageList>
                         {messages.map((m) => (
-                            <Message
-                                key={m.id}
-                                model={{
-                                    message: m.content,
-                                    direction: m.senderId === me.id ? "outgoing" : "incoming",
-                                    position: "single",
-                                }}
-                            />
+                            <div key={m.id} onContextMenu={(e) => handleContextMenu(e, m)}>
+                                <Message
+                                    model={{
+                                        message: m.content,
+                                        direction: m.senderId === me.id ? "outgoing" : "incoming",
+                                        position: "single",
+                                    }}
+                                />
+                            </div>
                         ))}
                     </MessageList>
                     <MessageInput placeholder="Type a message" onSend={handleSend} />
                 </ChatContainer>
             </MainContainer>
+
+            {menu && (
+                <ContextMenu
+                    x={menu.x}
+                    y={menu.y}
+                    onDelete={handleDelete}
+                    onClose={() => setMenu(null)}
+                />
+            )}
         </div>
     );
 }

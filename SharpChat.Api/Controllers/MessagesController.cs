@@ -75,8 +75,15 @@ namespace SharpChat.Api.Controllers
             {
                 return NotFound();
             }
+
+            var senderId = message.SenderId;
+            var recipientId = message.RecipientId;
+
             _db.Messages.Remove(message);
             await _db.SaveChangesAsync();
+
+            await _hubContext.Clients.Group(senderId.ToString()).SendAsync("MessageDeleted", id);
+            await _hubContext.Clients.Group(recipientId.ToString()).SendAsync("MessageDeleted", id);
 
             return NoContent();
         }
