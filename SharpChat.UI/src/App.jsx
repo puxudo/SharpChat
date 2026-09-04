@@ -11,7 +11,7 @@ import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./App.css";
 import ContactList from "./ContactList";
 
-const API_BASE = "http://localhost:5217";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const AVATAR_COLORS = ["#6a5cff", "#3ec6e0", "#ff7a7a", "#ffb84d", "#4dd68a", "#c37bff"];
 
