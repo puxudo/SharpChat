@@ -75,10 +75,8 @@ function ContextMenu({ x, y, onDelete, onClose }) {
             if (ref.current && !ref.current.contains(e.target)) onClose();
         };
         window.addEventListener("mousedown", handleOutside);
-        window.addEventListener("contextmenu", handleOutside);
         return () => {
             window.removeEventListener("mousedown", handleOutside);
-            window.removeEventListener("contextmenu", handleOutside);
         };
     }, [onClose]);
 
