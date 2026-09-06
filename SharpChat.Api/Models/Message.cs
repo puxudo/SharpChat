@@ -7,6 +7,7 @@ namespace SharpChat.Api.Models
         public Guid RecipientId { get; set; }
         public string Content { get; set; } = string.Empty;
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
+        public bool IsRead { get; set; } = false;
 
         public User Sender { get; set; } = null!;
         public User Recipient { get; set; } = null!;

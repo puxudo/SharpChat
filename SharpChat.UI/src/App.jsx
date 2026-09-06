@@ -34,7 +34,7 @@ function Avatar({ username, size = "" }) {
 }
 
 function LoginScreen({ onLogin }) {
-    const [mode, setMode] = useState("login"); // "login" | "register"
+    const [mode, setMode] = useState("login");
     const [username, setUsername] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
@@ -144,20 +144,38 @@ function ContextMenu({ x, y, onDelete, onClose }) {
 
 function ChatScreen({ me, otherUser, onBack }) {
     const [messages, setMessages] = useState([]);
-    const [menu, setMenu] = useState(null); // { x, y, message } | null
+    const [menu, setMenu] = useState(null);
     const connectionRef = useRef(null);
+
+    const markRead = () => {
+        fetch(`${API_BASE}/api/messages/mark-read?userId=${me.id}&otherUserId=${otherUser.id}`, {
+            method: "POST",
+        });
+    };
 
     useEffect(() => {
         fetch(`${API_BASE}/api/messages/conversation?userA=${me.id}&userB=${otherUser.id}`)
             .then((res) => res.json())
             .then((data) => setMessages(data));
 
+        markRead();
+
         const connection = new signalR.HubConnectionBuilder()
             .withUrl(`${API_BASE}/hubs/chat`)
             .build();
 
         connection.on("ReceiveMessage", (message) => {
+            const belongsToThisConversation =
+                (message.senderId === me.id && message.recipientId === otherUser.id) ||
+                (message.senderId === otherUser.id && message.recipientId === me.id);
+
+            if (!belongsToThisConversation) return;
+
             setMessages((prev) => [...prev, message]);
+
+            if (message.senderId === otherUser.id) {
+                markRead();
+            }
         });
 
         connection.on("MessageDeleted", (id) => {
@@ -201,7 +219,7 @@ function ChatScreen({ me, otherUser, onBack }) {
 
     const handleContextMenu = (e, message) => {
         e.preventDefault();
-        if (message.senderId !== me.id) return; // only allow deleting your own messages
+        if (message.senderId !== me.id) return;
         setMenu({ x: e.clientX, y: e.clientY, message });
     };
 
@@ -286,11 +304,7 @@ function App() {
 
     return (
         <div className="app-shell">
-            <ChatScreen
-                me={me}
-                otherUser={otherUser}
-                onBack={() => setOtherUser(null)}
-            />
+            <ChatScreen me={me} otherUser={otherUser} onBack={() => setOtherUser(null)} />
         </div>
     );
 }

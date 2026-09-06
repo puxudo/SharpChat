@@ -82,16 +82,73 @@ namespace SharpChat.Api.Controllers
         }
 
         [HttpGet("contacts/{userId}")]
-        public async Task<ActionResult<List<Guid>>> GetContacts(Guid userId)
+        public async Task<ActionResult<List<ContactDto>>> GetContacts(Guid userId)
         {
-            var contactsIds = await _db
+            var messages = await _db
                 .Messages.Where(m => m.SenderId == userId || m.RecipientId == userId)
-                .Select(m => m.SenderId == userId ? m.RecipientId : m.SenderId)
-                .Distinct()
                 .ToListAsync();
 
-            return Ok(contactsIds);
+            var groupedByContact = messages
+                .GroupBy(m => m.SenderId == userId ? m.RecipientId : m.SenderId)
+                .ToList();
+
+            var otherUserIds = groupedByContact.Select(g => g.Key).ToList();
+            var otherUsers = await _db
+                .Users.Where(u => otherUserIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
+
+            var result = groupedByContact
+                .Select(g =>
+                {
+                    var otherUser = otherUsers[g.Key];
+                    var lastMessage = g.OrderByDescending(m => m.SentAt).First();
+                    var unreadCount = g.Count(m => m.RecipientId == userId && !m.IsRead);
+
+                    return new ContactDto(
+                        g.Key,
+                        otherUser.Username,
+                        otherUser.Name,
+                        unreadCount,
+                        lastMessage.Content,
+                        lastMessage.SentAt
+                    );
+                })
+                .OrderByDescending(c => c.LastMessageAt)
+                .ToList();
+
+            return Ok(result);
         }
+
+        [HttpPost("mark-read")]
+        public async Task<IActionResult> MarkAsRead(
+            [FromQuery] Guid userId,
+            [FromQuery] Guid otherUserId
+        )
+        {
+            var unreadMessages = await _db
+                .Messages.Where(m =>
+                    m.SenderId == otherUserId && m.RecipientId == userId && !m.IsRead
+                )
+                .ToListAsync();
+
+            foreach (var message in unreadMessages)
+            {
+                message.IsRead = true;
+            }
+
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        public record ContactDto(
+            Guid UserId,
+            string Username,
+            string Name,
+            int UnreadCount,
+            string? LastMessage,
+            DateTime? LastMessageAt
+        );
 
         public record SendMessageRequest(Guid SenderId, Guid RecipientId, string Content);
     }
