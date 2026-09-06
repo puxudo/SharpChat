@@ -116,6 +116,20 @@
     transform: scale(0.98);
 }
 
+.login-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin: -0.5rem 0 1rem;
+}
+
+.login-switch {
+    background: none !important;
+    color: var(--accent) !important;
+    font-weight: 500 !important;
+    margin-top: 0.75rem;
+    box-shadow: none !important;
+}
+
 /* ---------- Contact list ---------- */
 
 .contact-list {
@@ -139,6 +153,25 @@
 .contact-list-header h2 {
     margin: 0;
     color: var(--text-h);
+}
+
+.contact-list-header input {
+    box-sizing: border-box;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-inset);
+    color: var(--text-h);
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    text-align: start;
+    unicode-bidi: plaintext;
+}
+
+.contact-list-header input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 .contact-row {

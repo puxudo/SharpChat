@@ -75,17 +75,22 @@ namespace SharpChat.Api.Controllers
             {
                 return NotFound();
             }
-
-            var senderId = message.SenderId;
-            var recipientId = message.RecipientId;
-
             _db.Messages.Remove(message);
             await _db.SaveChangesAsync();
 
-            await _hubContext.Clients.Group(senderId.ToString()).SendAsync("MessageDeleted", id);
-            await _hubContext.Clients.Group(recipientId.ToString()).SendAsync("MessageDeleted", id);
-
             return NoContent();
+        }
+
+        [HttpGet("contacts/{userId}")]
+        public async Task<ActionResult<List<Guid>>> GetContacts(Guid userId)
+        {
+            var contactsIds = await _db
+                .Messages.Where(m => m.SenderId == userId || m.RecipientId == userId)
+                .Select(m => m.SenderId == userId ? m.RecipientId : m.SenderId)
+                .Distinct()
+                .ToListAsync();
+
+            return Ok(contactsIds);
         }
 
         public record SendMessageRequest(Guid SenderId, Guid RecipientId, string Content);

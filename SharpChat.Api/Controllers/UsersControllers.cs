@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SharpChat.Api.Data;
@@ -16,15 +18,50 @@ namespace SharpChat.Api.Controllers
             _db = db;
         }
 
-        [HttpPost]
-        public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserRequest request)
+        [HttpPost("register")]
+        public async Task<ActionResult<UserDto>> Register([FromBody] RegisterRequest request)
         {
-            var user = new User { Id = Guid.NewGuid(), Username = request.Username };
+            var UsernameTaken = await _db.Users.AnyAsync(u => u.Username == request.Username);
+            if (UsernameTaken)
+            {
+                return Conflict("This Username is already taken!");
+            }
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = request.Username,
+                Name = request.Name,
+            };
+
+            var hasher = new PasswordHasher<User>();
+            user.Passwordhash = hasher.HashPassword(user, request.Password);
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+            return Ok(ToDto(user));
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<UserDto>> Login([FromBody] LoginRequest request)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+
+            if (user is null)
+            {
+                return Unauthorized("Invalid username or password");
+            }
+
+            var hasher = new PasswordHasher<User>();
+            var result = hasher.VerifyHashedPassword(user, user.Passwordhash, request.Password);
+
+            if (result == PasswordVerificationResult.Failed)
+            {
+                return Unauthorized("Invalid username or password");
+            }
+
+            return Ok(ToDto(user));
         }
 
         [HttpGet("{id}")]
@@ -33,18 +70,25 @@ namespace SharpChat.Api.Controllers
             var user = await _db.Users.FindAsync(id);
 
             if (user is null)
-            {
                 return NotFound();
-            }
 
-            return Ok(user);
+            return Ok(ToDto(user));
         }
 
-        [HttpGet]
-        public async Task<ActionResult<List<User>>> GetAllUsers()
+        [HttpGet("search")]
+        public async Task<ActionResult<List<UserDto>>> SearchUsers([FromQuery] string username)
         {
-            var users = await _db.Users.ToListAsync();
-            return Ok(users);
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return Ok(new List<UserDto>());
+            }
+
+            var users = await _db
+                .Users.Where(u => u.Username.Contains(username))
+                .Take(20)
+                .ToListAsync();
+
+            return Ok(users.Select(ToDto).ToList());
         }
 
         [HttpPut("{id}")]
@@ -79,21 +123,14 @@ namespace SharpChat.Api.Controllers
             return NoContent();
         }
 
-        [HttpPost("login")]
-        public async Task<ActionResult<User>> Login([FromBody] CreateUserRequest request)
-        {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
-
-            if (user is null)
-            {
-                user = new User { Id = Guid.NewGuid(), Username = request.Username };
-
-                _db.Users.Add(user);
-                await _db.SaveChangesAsync();
-            }
-            return Ok(user);
-        }
+        private static UserDto ToDto(User user) => new(user.Id, user.Username, user.Name);
     }
 
     public record CreateUserRequest(string Username);
+
+    public record UserDto(Guid Id, string Username, string Name);
+
+    public record RegisterRequest(string Username, string Name, string Password);
+
+    public record LoginRequest(string Username, string Password);
 }

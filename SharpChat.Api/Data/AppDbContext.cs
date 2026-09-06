@@ -13,6 +13,11 @@ namespace SharpChat.Api.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(u => u.Username).IsUnique();
+            });
+
             modelBuilder.Entity<Message>(entity =>
             {
                 entity
@@ -20,7 +25,6 @@ namespace SharpChat.Api.Data
                     .WithMany()
                     .HasForeignKey(m => m.SenderId)
                     .OnDelete(DeleteBehavior.Restrict);
-
                 entity
                     .HasOne(m => m.Recipient)
                     .WithMany()

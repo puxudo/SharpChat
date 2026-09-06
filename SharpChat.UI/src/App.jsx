@@ -34,34 +34,87 @@ function Avatar({ username, size = "" }) {
 }
 
 function LoginScreen({ onLogin }) {
+    const [mode, setMode] = useState("login"); // "login" | "register"
     const [username, setUsername] = useState("");
+    const [name, setName] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!username.trim()) return;
+        setError("");
 
-        const res = await fetch(`${API_BASE}/api/users/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username }),
-        });
+        const endpoint = mode === "login" ? "login" : "register";
+        const body =
+            mode === "login"
+                ? { username, password }
+                : { username, name, password };
 
-        const user = await res.json();
-        onLogin(user);
+        try {
+            const res = await fetch(`${API_BASE}/api/users/${endpoint}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                setError(text || "Something went wrong.");
+                return;
+            }
+
+            const user = await res.json();
+            onLogin(user);
+        } catch (err) {
+            setError("Could not reach the server.");
+        }
     };
 
     return (
         <div className="login-screen">
             <form onSubmit={handleSubmit} className="login-card">
-                <h2>Log in to SharpChat</h2>
-                <span className="login-tagline">Pick a username to start chatting</span>
+                <h2>{mode === "login" ? "Log in to SharpChat" : "Create an account"}</h2>
+                <span className="login-tagline">
+                    {mode === "login" ? "Welcome back" : "Pick a username to get started"}
+                </span>
+
                 <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter a username"
+                    placeholder="Username"
                     dir="auto"
                 />
-                <button type="submit">Log in</button>
+
+                {mode === "register" && (
+                    <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your name"
+                        dir="auto"
+                    />
+                )}
+
+                <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                />
+
+                {error && <p className="login-error">{error}</p>}
+
+                <button type="submit">{mode === "login" ? "Log in" : "Register"}</button>
+
+                <button
+                    type="button"
+                    className="login-switch"
+                    onClick={() => {
+                        setMode(mode === "login" ? "register" : "login");
+                        setError("");
+                    }}
+                >
+                    {mode === "login" ? "Need an account? Register" : "Already have an account? Log in"}
+                </button>
             </form>
         </div>
     );
@@ -180,8 +233,8 @@ function ChatScreen({ me, otherUser, onBack }) {
                 </button>
                 <Avatar username={otherUser.username} size="small" />
                 <div>
-                    <div className="chat-title">{otherUser.username}</div>
-                    <div className="chat-subtitle">Active now</div>
+                    <div className="chat-title">{otherUser.name || otherUser.username}</div>
+                    <div className="chat-subtitle">@{otherUser.username}</div>
                 </div>
             </div>
             <MainContainer>
