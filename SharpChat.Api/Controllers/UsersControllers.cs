@@ -65,7 +65,7 @@ namespace SharpChat.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(Guid id)
+        public async Task<ActionResult<UserDto>> GetUser(Guid id)
         {
             var user = await _db.Users.FindAsync(id);
 
