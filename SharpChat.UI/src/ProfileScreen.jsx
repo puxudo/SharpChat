@@ -4,7 +4,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 const EMOJI_OPTIONS = ["😀", "😎", "🦊", "🐱", "🐶", "🐼", "🦁", "🐸", "🐙", "🌟", "🔥", "⚡"];
 
-export default function ProfileScreen({ me, onUpdate }) {
+export default function ProfileScreen({ me, onUpdate, onBack }) {
     const [name, setName] = useState(me.name);
     const [avatarEmoji, setAvatarEmoji] = useState(me.avatarEmoji);
     const [saving, setSaving] = useState(false);
@@ -32,45 +32,48 @@ export default function ProfileScreen({ me, onUpdate }) {
     };
 
     return (
-        <div className="profile-screen">
-            <h2>Profile</h2>
-
-            <div className="profile-avatar-preview">
-                {avatarEmoji ? (
-                    <span className="avatar-emoji-large">{avatarEmoji}</span>
-                ) : (
-                    <span className="avatar-emoji-large">{me.username?.[0]?.toUpperCase()}</span>
-                )}
+        <div className="settings-panel">
+            <div className="chat-header">
+                <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
+                <div className="chat-title">Profile</div>
             </div>
 
-            <div className="profile-field">
-                <label>Username</label>
-                <input value={me.username} disabled dir="auto" />
-            </div>
-
-            <div className="profile-field">
-                <label>Name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} dir="auto" />
-            </div>
-
-            <div className="profile-field">
-                <label>Avatar</label>
-                <div className="emoji-grid">
-                    {EMOJI_OPTIONS.map((emoji) => (
-                        <button
-                            key={emoji}
-                            className={`emoji-option ${avatarEmoji === emoji ? "selected" : ""}`}
-                            onClick={() => setAvatarEmoji(emoji)}
-                        >
-                            {emoji}
-                        </button>
-                    ))}
+            <div className="settings-panel-body">
+                <div className="profile-avatar-preview">
+                    <span className="avatar-emoji-large">
+                        {avatarEmoji || me.username?.[0]?.toUpperCase()}
+                    </span>
                 </div>
-            </div>
 
-            <button className="profile-save-btn" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
-            </button>
+                <div className="profile-field">
+                    <label>Username</label>
+                    <input value={me.username} disabled dir="auto" />
+                </div>
+
+                <div className="profile-field">
+                    <label>Name</label>
+                    <input value={name} onChange={(e) => setName(e.target.value)} dir="auto" />
+                </div>
+
+                <div className="profile-field">
+                    <label>Avatar</label>
+                    <div className="emoji-grid">
+                        {EMOJI_OPTIONS.map((emoji) => (
+                            <button
+                                key={emoji}
+                                className={`emoji-option ${avatarEmoji === emoji ? "selected" : ""}`}
+                                onClick={() => setAvatarEmoji(emoji)}
+                            >
+                                {emoji}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <button className="profile-save-btn" onClick={handleSave} disabled={saving}>
+                    {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
+                </button>
+            </div>
         </div>
     );
 }

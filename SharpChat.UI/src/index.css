@@ -28,6 +28,23 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root[data-theme="light"] {
+  --text: #5b5866;
+  --text-h: #17171f;
+  --bg: #f5f5fa;
+  --bg-raised: #ffffff;
+  --bg-inset: #eceaf3;
+  --border: #dcd9e6;
+  --accent: #7c5cff;
+  --accent-strong: #6a46ff;
+  --accent-bg: rgba(124, 92, 255, 0.1);
+  --accent-border: rgba(124, 92, 255, 0.35);
+  --danger: #e0524f;
+  --shadow:
+    rgba(0, 0, 0, 0.12) 0 20px 40px -12px, rgba(0, 0, 0, 0.08) 0 4px 12px -4px;
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }

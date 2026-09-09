@@ -56,7 +56,6 @@
     color: var(--text-h);
 }
 
-/* custom scrollbar */
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
@@ -70,6 +69,65 @@
 }
 *::-webkit-scrollbar-track {
     background: transparent;
+}
+
+/* ---------- Split pane (desktop two-column layout) ---------- */
+
+.split-view {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.split-list {
+    width: 100%;
+    flex-shrink: 0;
+    overflow-y: auto;
+    background: var(--bg);
+}
+
+.split-detail {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+@media (min-width: 769px) {
+    .split-list {
+        width: 360px;
+        border-right: 1px solid var(--border);
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-hidden {
+        display: none;
+    }
+}
+
+/* ---------- Default pane (wallpaper) ---------- */
+
+.default-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: var(--text);
+    text-align: center;
+    background:
+        radial-gradient(600px circle at 20% 20%, var(--accent-bg), transparent 60%),
+        radial-gradient(500px circle at 80% 80%, rgba(124, 92, 255, 0.08), transparent 55%),
+        var(--bg);
+}
+
+.default-pane-icon {
+    font-size: 3rem;
+    opacity: 0.6;
 }
 
 /* ---------- Login ---------- */
@@ -172,7 +230,7 @@
     box-shadow: none !important;
 }
 
-/* ---------- Contact list ---------- */
+/* ---------- Contact list / Settings list (shared row styles) ---------- */
 
 .contact-list {
     width: 100%;
@@ -236,6 +294,10 @@
     background: var(--bg-raised);
 }
 
+.contact-row.active-row {
+    background: var(--accent-bg);
+}
+
 .contact-row .contact-name {
     font-weight: 600;
     color: var(--text-h);
@@ -248,9 +310,22 @@
     color: var(--text);
 }
 
+.contact-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .empty-state {
     padding: 2.5rem clamp(1.25rem, 4vw, 3rem);
     color: var(--text);
+}
+
+.settings-list {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background: var(--bg);
 }
 
 /* ---------- Avatars ---------- */
@@ -267,6 +342,7 @@
     font-weight: 600;
     font-size: 1rem;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    background: var(--accent);
 }
 
 .avatar-circle.small {
@@ -275,7 +351,7 @@
     font-size: 0.85rem;
 }
 
-/* ---------- Chat header ---------- */
+/* ---------- Chat/panel header (shared) ---------- */
 
 .chat-header {
     display: flex;
@@ -452,22 +528,20 @@
     padding: 0 6px;
 }
 
-.contact-preview {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+/* ---------- Settings panels (Profile / Appearance / Account) ---------- */
 
-.profile-screen {
-    padding: clamp(1.5rem, 5vw, 3rem);
-    max-width: 420px;
-    margin: 0 auto;
-    width: 100%;
+.settings-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
 }
 
-.profile-screen h2 {
-    margin-bottom: 1.5rem;
+.settings-panel-body {
+    padding: clamp(1.5rem, 5vw, 3rem);
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .profile-avatar-preview {
@@ -564,4 +638,58 @@
 .profile-save-btn:disabled {
     opacity: 0.7;
     cursor: default;
+}
+
+.theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 0;
+}
+
+.theme-toggle {
+    width: 46px;
+    height: 26px;
+    border-radius: 13px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.theme-toggle.on {
+    background: var(--accent);
+}
+
+.theme-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s;
+}
+
+.theme-toggle.on .theme-toggle-knob {
+    transform: translateX(20px);
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--danger);
+    border-radius: 10px;
+    background: none;
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 107, 107, 0.08);
 }

@@ -11,7 +11,9 @@ import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./App.css";
 import ContactList from "./ContactList";
 import ProfileScreen from "./ProfileScreen";
-import SettingsScreen from "./SettingsScreen";
+import AppearanceScreen from "./AppearanceScreen";
+import AccountScreen from "./AccountScreen";
+import SplitPane from "./SplitPane";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -28,6 +30,15 @@ function Avatar({ username, size = "", emoji = null }) {
     return (
         <div className={`avatar-circle ${size}`} style={{ background: colorForName(username ?? "") }}>
             {emoji || initial}
+        </div>
+    );
+}
+
+function DefaultPane({ icon, text }) {
+    return (
+        <div className="default-pane">
+            <div className="default-pane-icon">{icon}</div>
+            <p>{text}</p>
         </div>
     );
 }
@@ -184,7 +195,6 @@ function ChatScreen({ me, otherUser, onBack }) {
         <div className="chat-body">
             <div className="chat-header">
                 <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
-
                 <Avatar username={otherUser.username} size="small" emoji={otherUser.avatarEmoji} />
                 <div>
                     <div className="chat-title">{otherUser.name || otherUser.username}</div>
@@ -217,17 +227,68 @@ function ChatScreen({ me, otherUser, onBack }) {
 function ChatsTab({ me }) {
     const [otherUser, setOtherUser] = useState(null);
 
-    if (!otherUser) {
-        return <ContactList me={me} onSelectContact={setOtherUser} />;
-    }
+    return (
+        <SplitPane
+            hasSelection={!!otherUser}
+            list={<ContactList me={me} onSelectContact={setOtherUser} activeContactId={otherUser?.id} />}
+            detail={
+                otherUser ? (
+                    <ChatScreen me={me} otherUser={otherUser} onBack={() => setOtherUser(null)} />
+                ) : (
+                    <DefaultPane icon="💬" text="Select a chat to start messaging" />
+                )
+            }
+        />
+    );
+}
 
-    return <ChatScreen me={me} otherUser={otherUser} onBack={() => setOtherUser(null)} />;
+function SettingsTab({ me, onUpdate, onLogout }) {
+    const [activeOption, setActiveOption] = useState(null);
+
+    const options = [
+        { key: "profile", label: "Profile", icon: "👤" },
+        { key: "appearance", label: "Appearance", icon: "🎨" },
+        { key: "account", label: "Account", icon: "🚪" },
+    ];
+
+    return (
+        <SplitPane
+            hasSelection={!!activeOption}
+            list={
+                <div className="settings-list">
+                    <div className="contact-list-header">
+                        <h2>Settings</h2>
+                    </div>
+                    {options.map((opt) => (
+                        <button
+                            key={opt.key}
+                            className={`contact-row ${activeOption === opt.key ? "active-row" : ""}`}
+                            onClick={() => setActiveOption(opt.key)}
+                        >
+                            <div className="avatar-circle">{opt.icon}</div>
+                            <div className="contact-name">{opt.label}</div>
+                        </button>
+                    ))}
+                </div>
+            }
+            detail={
+                activeOption === "profile" ? (
+                    <ProfileScreen me={me} onUpdate={onUpdate} onBack={() => setActiveOption(null)} />
+                ) : activeOption === "appearance" ? (
+                    <AppearanceScreen onBack={() => setActiveOption(null)} />
+                ) : activeOption === "account" ? (
+                    <AccountScreen onLogout={onLogout} onBack={() => setActiveOption(null)} />
+                ) : (
+                    <DefaultPane icon="⚙️" text="Choose a setting to configure it" />
+                )
+            }
+        />
+    );
 }
 
 function BottomNav({ active, onChange }) {
     const tabs = [
         { key: "chats", label: "Chats", icon: "💬" },
-        { key: "profile", label: "Profile", icon: "👤" },
         { key: "settings", label: "Settings", icon: "⚙️" },
     ];
 
@@ -251,6 +312,11 @@ function App() {
     const [me, setMe] = useState(null);
     const [checkingSession, setCheckingSession] = useState(true);
     const [activeTab, setActiveTab] = useState("chats");
+
+    useEffect(() => {
+        const savedTheme = localStorage.getItem("theme") || "dark";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -287,8 +353,9 @@ function App() {
         <div className="app-shell">
             <div className="tab-content">
                 {activeTab === "chats" && <ChatsTab me={me} />}
-                {activeTab === "profile" && <ProfileScreen me={me} onUpdate={setMe} />}
-                {activeTab === "settings" && <SettingsScreen onLogout={handleLogout} />}
+                {activeTab === "settings" && (
+                    <SettingsTab me={me} onUpdate={setMe} onLogout={handleLogout} />
+                )}
             </div>
             <BottomNav active={activeTab} onChange={setActiveTab} />
         </div>

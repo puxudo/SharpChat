@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import * as signalR from "@microsoft/signalr";
+import { useEffect, useState } from "react";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -11,12 +10,11 @@ function colorForName(name) {
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-export default function ContactList({ me, onSelectContact }) {
+export default function ContactList({ me, onSelectContact, activeContactId }) {
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState([]);
-    const connectionRef = useRef(null);
 
     const loadContacts = () => {
         fetch(`${API_BASE}/api/messages/contacts/${me.id}`)
@@ -29,48 +27,6 @@ export default function ContactList({ me, onSelectContact }) {
 
     useEffect(() => {
         loadContacts();
-
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl(`${API_BASE}/hubs/chat`)
-            .build();
-
-        connection.on("ReceiveMessage", (message) => {
-            if (message.recipientId !== me.id) return;
-
-            setContacts((prev) => {
-                const existing = prev.find((c) => c.userId === message.senderId);
-
-                if (!existing) {
-                    loadContacts();
-                    return prev;
-                }
-
-                const updated = prev.map((c) =>
-                    c.userId === message.senderId
-                        ? {
-                            ...c,
-                            lastMessage: message.content,
-                            lastMessageAt: message.sentAt,
-                            unreadCount: c.unreadCount + 1,
-                        }
-                        : c
-                );
-
-                return updated.sort(
-                    (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
-                );
-            });
-        });
-
-        connection.start().then(() => {
-            connection.invoke("JoinConversation", me.id);
-        });
-
-        connectionRef.current = connection;
-
-        return () => {
-            connection.stop();
-        };
     }, [me.id]);
 
     useEffect(() => {
@@ -111,14 +67,16 @@ export default function ContactList({ me, onSelectContact }) {
                             key={user.id}
                             className="contact-row"
                             onClick={() =>
-                                onSelectContact({ id: user.id, username: user.username, name: user.name })
+                                onSelectContact({
+                                    id: user.id,
+                                    username: user.username,
+                                    name: user.name,
+                                    avatarEmoji: user.avatarEmoji,
+                                })
                             }
                         >
-                            <div
-                                className="avatar-circle"
-                                style={{ background: colorForName(user.username) }}
-                            >
-                                {user.username?.[0]?.toUpperCase() ?? "?"}
+                            <div className="avatar-circle" style={{ background: colorForName(user.username) }}>
+                                {user.avatarEmoji || user.username?.[0]?.toUpperCase() || "?"}
                             </div>
                             <div>
                                 <div className="contact-name">{user.name || user.username}</div>
@@ -136,25 +94,25 @@ export default function ContactList({ me, onSelectContact }) {
                     {contacts.map((c) => (
                         <button
                             key={c.userId}
-                            className="contact-row"
+                            className={`contact-row ${c.userId === activeContactId ? "active-row" : ""}`}
                             onClick={() =>
-                                onSelectContact({ id: c.userId, username: c.username, name: c.name })
+                                onSelectContact({
+                                    id: c.userId,
+                                    username: c.username,
+                                    name: c.name,
+                                    avatarEmoji: c.avatarEmoji,
+                                })
                             }
                         >
-                            <div
-                                className="avatar-circle"
-                                style={{ background: colorForName(c.username) }}
-                            >
-                                {c.username?.[0]?.toUpperCase() ?? "?"}
+                            <div className="avatar-circle" style={{ background: colorForName(c.username) }}>
+                                {c.avatarEmoji || c.username?.[0]?.toUpperCase() || "?"}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div className="contact-name">{c.name || c.username}</div>
                                 <div className="contact-sub contact-preview">{c.lastMessage}</div>
                             </div>
                             {c.unreadCount > 0 && (
-                                <div className="unread-badge">
-                                    {c.unreadCount > 9 ? "9+" : c.unreadCount}
-                                </div>
+                                <div className="unread-badge">{c.unreadCount > 9 ? "9+" : c.unreadCount}</div>
                             )}
                         </button>
                     ))}
