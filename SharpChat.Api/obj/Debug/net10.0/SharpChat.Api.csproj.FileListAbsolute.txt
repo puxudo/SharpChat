@@ -121,3 +121,12 @@
 /home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 /home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Npgsql.dll
 /home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.IdentityModel.Abstractions.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.IdentityModel.Logging.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
+/home/cbug/code/SharpChat/SharpChat.Api/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll

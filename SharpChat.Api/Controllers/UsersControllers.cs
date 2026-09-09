@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,19 +16,21 @@ namespace SharpChat.Api.Controllers
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IConfiguration _config;
 
-        public UsersController(AppDbContext db)
+        public UsersController(AppDbContext db, IConfiguration config)
         {
             _db = db;
+            _config = config;
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<UserDto>> Register([FromBody] RegisterRequest request)
+        public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
         {
             var usernameTaken = await _db.Users.AnyAsync(u => u.Username == request.Username);
             if (usernameTaken)
             {
-                return Conflict("That username already exists.");
+                return Conflict("That username is already taken.");
             }
 
             var user = new User
@@ -50,7 +51,7 @@ namespace SharpChat.Api.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<UserDto>> Login([FromBody] LoginRequest request)
+        public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
 
@@ -66,18 +67,30 @@ namespace SharpChat.Api.Controllers
             {
                 return Unauthorized("Invalid username or password");
             }
+
             var token = GenerateToken(user);
             return Ok(new AuthResponse(ToDto(user), token));
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<ActionResult<UserDto>> GetMe()
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user is null)
+                return NotFound();
+
+            return Ok(ToDto(user));
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDto>> GetUser(Guid id)
         {
             var user = await _db.Users.FindAsync(id);
-
             if (user is null)
                 return NotFound();
-
             return Ok(ToDto(user));
         }
 
@@ -98,16 +111,14 @@ namespace SharpChat.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] CreateUserRequest request)
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
         {
             var user = await _db.Users.FindAsync(id);
-
             if (user is null)
-            {
                 return NotFound();
-            }
 
-            user.Username = request.Username;
+            user.Name = request.Name;
+            user.AvatarEmoji = request.AvatarEmoji;
             await _db.SaveChangesAsync();
 
             return NoContent();
@@ -117,11 +128,8 @@ namespace SharpChat.Api.Controllers
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _db.Users.FindAsync(id);
-
             if (user is null)
-            {
                 return NotFound();
-            }
 
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
@@ -129,24 +137,9 @@ namespace SharpChat.Api.Controllers
             return NoContent();
         }
 
-        [Authorize]
-        [HttpGet("me")]
-        public async Task<ActionResult<UserDto>> GetMe()
-        {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var user = await _db.Users.FindAsync(userId);
-
-            if (user is null)
-                return NotFound();
-
-            return Ok(ToDto(user));
-        }
-
         private string GenerateToken(User user)
         {
-            var jwtKey = HttpContext.RequestServices.GetRequiredService<IConfiguration>()[
-                "Jwt:Key"
-            ];
+            var jwtKey = _config["Jwt:Key"]!;
 
             var claims = new[]
             {
@@ -166,16 +159,19 @@ namespace SharpChat.Api.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private static UserDto ToDto(User user) => new(user.Id, user.Username, user.Name);
+        private static UserDto ToDto(User user) =>
+            new(user.Id, user.Username, user.Name, user.AvatarEmoji);
     }
-
-    public record AuthResponse(UserDto User, string Token);
 
     public record CreateUserRequest(string Username);
 
-    public record UserDto(Guid Id, string Username, string Name);
+    public record UpdateUserRequest(string Name, string? AvatarEmoji);
+
+    public record UserDto(Guid Id, string Username, string Name, string? AvatarEmoji);
 
     public record RegisterRequest(string Username, string Name, string Password);
 
     public record LoginRequest(string Username, string Password);
+
+    public record AuthResponse(UserDto User, string Token);
 }

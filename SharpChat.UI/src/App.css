@@ -457,3 +457,111 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.profile-screen {
+    padding: clamp(1.5rem, 5vw, 3rem);
+    max-width: 420px;
+    margin: 0 auto;
+    width: 100%;
+    overflow-y: auto;
+}
+
+.profile-screen h2 {
+    margin-bottom: 1.5rem;
+}
+
+.profile-avatar-preview {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.avatar-emoji-large {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+}
+
+.profile-field {
+    margin-bottom: 1.5rem;
+}
+
+.profile-field label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+}
+
+.profile-field input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-inset);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    text-align: start;
+    unicode-bidi: plaintext;
+}
+
+.profile-field input:disabled {
+    opacity: 0.6;
+}
+
+.profile-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+}
+
+.emoji-option {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-inset);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.emoji-option:hover {
+    background: var(--bg-raised);
+}
+
+.emoji-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+}
+
+.profile-save-btn {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.profile-save-btn:disabled {
+    opacity: 0.7;
+    cursor: default;
+}

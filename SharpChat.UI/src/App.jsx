@@ -23,11 +23,11 @@ function colorForName(name) {
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function Avatar({ username, size = "" }) {
+function Avatar({ username, size = "", emoji = null }) {
     const initial = username?.[0]?.toUpperCase() ?? "?";
     return (
         <div className={`avatar-circle ${size}`} style={{ background: colorForName(username ?? "") }}>
-            {initial}
+            {emoji || initial}
         </div>
     );
 }
@@ -184,7 +184,8 @@ function ChatScreen({ me, otherUser, onBack }) {
         <div className="chat-body">
             <div className="chat-header">
                 <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
-                <Avatar username={otherUser.username} size="small" />
+
+                <Avatar username={otherUser.username} size="small" emoji={otherUser.avatarEmoji} />
                 <div>
                     <div className="chat-title">{otherUser.name || otherUser.username}</div>
                     <div className="chat-subtitle">@{otherUser.username}</div>
