@@ -10,6 +10,8 @@ import {
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./App.css";
 import ContactList from "./ContactList";
+import ProfileScreen from "./ProfileScreen";
+import SettingsScreen from "./SettingsScreen";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -24,10 +26,7 @@ function colorForName(name) {
 function Avatar({ username, size = "" }) {
     const initial = username?.[0]?.toUpperCase() ?? "?";
     return (
-        <div
-            className={`avatar-circle ${size}`}
-            style={{ background: colorForName(username ?? "") }}
-        >
+        <div className={`avatar-circle ${size}`} style={{ background: colorForName(username ?? "") }}>
             {initial}
         </div>
     );
@@ -45,10 +44,7 @@ function LoginScreen({ onLogin }) {
         setError("");
 
         const endpoint = mode === "login" ? "login" : "register";
-        const body =
-            mode === "login"
-                ? { username, password }
-                : { username, name, password };
+        const body = mode === "login" ? { username, password } : { username, name, password };
 
         try {
             const res = await fetch(`${API_BASE}/api/users/${endpoint}`, {
@@ -58,13 +54,12 @@ function LoginScreen({ onLogin }) {
             });
 
             if (!res.ok) {
-                const text = await res.text();
-                setError(text || "Something went wrong.");
+                setError((await res.text()) || "Something went wrong.");
                 return;
             }
 
-            const user = await res.json();
-            onLogin(user);
+            const authResponse = await res.json();
+            onLogin(authResponse);
         } catch (err) {
             setError("Could not reach the server.");
         }
@@ -77,34 +72,13 @@ function LoginScreen({ onLogin }) {
                 <span className="login-tagline">
                     {mode === "login" ? "Welcome back" : "Pick a username to get started"}
                 </span>
-
-                <input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Username"
-                    dir="auto"
-                />
-
+                <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" dir="auto" />
                 {mode === "register" && (
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Your name"
-                        dir="auto"
-                    />
+                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" dir="auto" />
                 )}
-
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                />
-
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
                 {error && <p className="login-error">{error}</p>}
-
                 <button type="submit">{mode === "login" ? "Log in" : "Register"}</button>
-
                 <button
                     type="button"
                     className="login-switch"
@@ -128,9 +102,7 @@ function ContextMenu({ x, y, onDelete, onClose }) {
             if (ref.current && !ref.current.contains(e.target)) onClose();
         };
         window.addEventListener("mousedown", handleOutside);
-        return () => {
-            window.removeEventListener("mousedown", handleOutside);
-        };
+        return () => window.removeEventListener("mousedown", handleOutside);
     }, [onClose]);
 
     return (
@@ -148,9 +120,7 @@ function ChatScreen({ me, otherUser, onBack }) {
     const connectionRef = useRef(null);
 
     const markRead = () => {
-        fetch(`${API_BASE}/api/messages/mark-read?userId=${me.id}&otherUserId=${otherUser.id}`, {
-            method: "POST",
-        });
+        fetch(`${API_BASE}/api/messages/mark-read?userId=${me.id}&otherUserId=${otherUser.id}`, { method: "POST" });
     };
 
     useEffect(() => {
@@ -160,37 +130,26 @@ function ChatScreen({ me, otherUser, onBack }) {
 
         markRead();
 
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl(`${API_BASE}/hubs/chat`)
-            .build();
+        const connection = new signalR.HubConnectionBuilder().withUrl(`${API_BASE}/hubs/chat`).build();
 
         connection.on("ReceiveMessage", (message) => {
-            const belongsToThisConversation =
+            const belongs =
                 (message.senderId === me.id && message.recipientId === otherUser.id) ||
                 (message.senderId === otherUser.id && message.recipientId === me.id);
-
-            if (!belongsToThisConversation) return;
+            if (!belongs) return;
 
             setMessages((prev) => [...prev, message]);
-
-            if (message.senderId === otherUser.id) {
-                markRead();
-            }
+            if (message.senderId === otherUser.id) markRead();
         });
 
         connection.on("MessageDeleted", (id) => {
             setMessages((prev) => prev.filter((m) => m.id !== id));
         });
 
-        connection.start().then(() => {
-            connection.invoke("JoinConversation", me.id);
-        });
-
+        connection.start().then(() => connection.invoke("JoinConversation", me.id));
         connectionRef.current = connection;
 
-        return () => {
-            connection.stop();
-        };
+        return () => connection.stop();
     }, [otherUser.id, me.id]);
 
     const handleSend = async (text) => {
@@ -198,18 +157,9 @@ function ChatScreen({ me, otherUser, onBack }) {
             const res = await fetch(`${API_BASE}/api/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    senderId: me.id,
-                    recipientId: otherUser.id,
-                    content: text,
-                }),
+                body: JSON.stringify({ senderId: me.id, recipientId: otherUser.id, content: text }),
             });
-
-            if (!res.ok) {
-                console.error("Send failed:", res.status, await res.text());
-                return;
-            }
-
+            if (!res.ok) return;
             const savedMessage = await res.json();
             setMessages((prev) => [...prev, savedMessage]);
         } catch (err) {
@@ -226,29 +176,14 @@ function ChatScreen({ me, otherUser, onBack }) {
     const handleDelete = async () => {
         const messageId = menu.message.id;
         setMenu(null);
-
-        try {
-            const res = await fetch(`${API_BASE}/api/messages/${messageId}`, {
-                method: "DELETE",
-            });
-
-            if (!res.ok) {
-                console.error("Delete failed:", res.status, await res.text());
-                return;
-            }
-
-            setMessages((prev) => prev.filter((m) => m.id !== messageId));
-        } catch (err) {
-            console.error("Delete threw an error:", err);
-        }
+        const res = await fetch(`${API_BASE}/api/messages/${messageId}`, { method: "DELETE" });
+        if (res.ok) setMessages((prev) => prev.filter((m) => m.id !== messageId));
     };
 
     return (
         <div className="chat-body">
             <div className="chat-header">
-                <button className="back-btn" onClick={onBack} aria-label="Back">
-                    &larr;
-                </button>
+                <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
                 <Avatar username={otherUser.username} size="small" />
                 <div>
                     <div className="chat-title">{otherUser.name || otherUser.username}</div>
@@ -273,38 +208,88 @@ function ChatScreen({ me, otherUser, onBack }) {
                     <MessageInput placeholder="Type a message" onSend={handleSend} />
                 </ChatContainer>
             </MainContainer>
-
-            {menu && (
-                <ContextMenu
-                    x={menu.x}
-                    y={menu.y}
-                    onDelete={handleDelete}
-                    onClose={() => setMenu(null)}
-                />
-            )}
+            {menu && <ContextMenu x={menu.x} y={menu.y} onDelete={handleDelete} onClose={() => setMenu(null)} />}
         </div>
+    );
+}
+
+function ChatsTab({ me }) {
+    const [otherUser, setOtherUser] = useState(null);
+
+    if (!otherUser) {
+        return <ContactList me={me} onSelectContact={setOtherUser} />;
+    }
+
+    return <ChatScreen me={me} otherUser={otherUser} onBack={() => setOtherUser(null)} />;
+}
+
+function BottomNav({ active, onChange }) {
+    const tabs = [
+        { key: "chats", label: "Chats", icon: "💬" },
+        { key: "profile", label: "Profile", icon: "👤" },
+        { key: "settings", label: "Settings", icon: "⚙️" },
+    ];
+
+    return (
+        <nav className="bottom-nav">
+            {tabs.map((tab) => (
+                <button
+                    key={tab.key}
+                    className={`nav-tab ${active === tab.key ? "active" : ""}`}
+                    onClick={() => onChange(tab.key)}
+                >
+                    <span className="nav-icon">{tab.icon}</span>
+                    <span className="nav-label">{tab.label}</span>
+                </button>
+            ))}
+        </nav>
     );
 }
 
 function App() {
     const [me, setMe] = useState(null);
-    const [otherUser, setOtherUser] = useState(null);
+    const [checkingSession, setCheckingSession] = useState(true);
+    const [activeTab, setActiveTab] = useState("chats");
 
-    if (!me) {
-        return <LoginScreen onLogin={setMe} />;
-    }
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setCheckingSession(false);
+            return;
+        }
 
-    if (!otherUser) {
-        return (
-            <div className="app-shell">
-                <ContactList me={me} onSelectContact={setOtherUser} />
-            </div>
-        );
-    }
+        fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+            .then((res) => {
+                if (!res.ok) throw new Error("Invalid session");
+                return res.json();
+            })
+            .then((user) => setMe(user))
+            .catch(() => localStorage.removeItem("token"))
+            .finally(() => setCheckingSession(false));
+    }, []);
+
+    const handleLogin = (authResponse) => {
+        localStorage.setItem("token", authResponse.token);
+        setMe(authResponse.user);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        setMe(null);
+        setActiveTab("chats");
+    };
+
+    if (checkingSession) return <p style={{ padding: "2rem" }}>Loading...</p>;
+    if (!me) return <LoginScreen onLogin={handleLogin} />;
 
     return (
         <div className="app-shell">
-            <ChatScreen me={me} otherUser={otherUser} onBack={() => setOtherUser(null)} />
+            <div className="tab-content">
+                {activeTab === "chats" && <ChatsTab me={me} />}
+                {activeTab === "profile" && <ProfileScreen me={me} onUpdate={setMe} />}
+                {activeTab === "settings" && <SettingsScreen onLogout={handleLogout} />}
+            </div>
+            <BottomNav active={activeTab} onChange={setActiveTab} />
         </div>
     );
 }

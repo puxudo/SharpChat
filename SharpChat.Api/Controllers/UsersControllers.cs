@@ -1,7 +1,12 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SharpChat.Api.Data;
 using SharpChat.Api.Models;
 
@@ -21,10 +26,10 @@ namespace SharpChat.Api.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<UserDto>> Register([FromBody] RegisterRequest request)
         {
-            var UsernameTaken = await _db.Users.AnyAsync(u => u.Username == request.Username);
-            if (UsernameTaken)
+            var usernameTaken = await _db.Users.AnyAsync(u => u.Username == request.Username);
+            if (usernameTaken)
             {
-                return Conflict("This Username is already taken!");
+                return Conflict("That username already exists.");
             }
 
             var user = new User
@@ -40,7 +45,8 @@ namespace SharpChat.Api.Controllers
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            return Ok(ToDto(user));
+            var token = GenerateToken(user);
+            return Ok(new AuthResponse(ToDto(user), token));
         }
 
         [HttpPost("login")]
@@ -60,8 +66,8 @@ namespace SharpChat.Api.Controllers
             {
                 return Unauthorized("Invalid username or password");
             }
-
-            return Ok(ToDto(user));
+            var token = GenerateToken(user);
+            return Ok(new AuthResponse(ToDto(user), token));
         }
 
         [HttpGet("{id}")]
@@ -123,8 +129,47 @@ namespace SharpChat.Api.Controllers
             return NoContent();
         }
 
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<ActionResult<UserDto>> GetMe()
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user is null)
+                return NotFound();
+
+            return Ok(ToDto(user));
+        }
+
+        private string GenerateToken(User user)
+        {
+            var jwtKey = HttpContext.RequestServices.GetRequiredService<IConfiguration>()[
+                "Jwt:Key"
+            ];
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(7),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
         private static UserDto ToDto(User user) => new(user.Id, user.Username, user.Name);
     }
+
+    public record AuthResponse(UserDto User, string Token);
 
     public record CreateUserRequest(string Username);
 
