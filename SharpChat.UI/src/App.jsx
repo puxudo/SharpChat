@@ -14,10 +14,11 @@ import ProfileScreen from "./ProfileScreen";
 import AppearanceScreen from "./AppearanceScreen";
 import AccountScreen from "./AccountScreen";
 import SplitPane from "./SplitPane";
+import { IconUser, IconPalette, IconLogOut, IconMessage, IconSettings } from "./Icons";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
-const AVATAR_COLORS = ["#6a5cff", "#3ec6e0", "#ff7a7a", "#ffb84d", "#4dd68a", "#c37bff"];
+const AVATAR_COLORS = ["#7c6cf0", "#3ec6c2", "#e0824f", "#5eb87a", "#e0577a", "#4f9fe0"];
 
 function colorForName(name) {
     let hash = 0;
@@ -78,18 +79,22 @@ function LoginScreen({ onLogin }) {
 
     return (
         <div className="login-screen">
-            <form onSubmit={handleSubmit} className="login-card">
-                <h2>{mode === "login" ? "Log in to SharpChat" : "Create an account"}</h2>
-                <span className="login-tagline">
-                    {mode === "login" ? "Welcome back" : "Pick a username to get started"}
-                </span>
-                <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" dir="auto" />
-                {mode === "register" && (
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" dir="auto" />
-                )}
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
-                {error && <p className="login-error">{error}</p>}
-                <button type="submit">{mode === "login" ? "Log in" : "Register"}</button>
+            <div className="login-card">
+                <div className="login-mark">SharpChat</div>
+                <h2>{mode === "login" ? "Welcome back" : "Create your account"}</h2>
+
+                <form onSubmit={handleSubmit}>
+                    <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" dir="auto" />
+                    {mode === "register" && (
+                        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" dir="auto" />
+                    )}
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+
+                    {error && <p className="login-error">{error}</p>}
+
+                    <button type="submit">{mode === "login" ? "Log in" : "Create account"}</button>
+                </form>
+
                 <button
                     type="button"
                     className="login-switch"
@@ -100,7 +105,7 @@ function LoginScreen({ onLogin }) {
                 >
                     {mode === "login" ? "Need an account? Register" : "Already have an account? Log in"}
                 </button>
-            </form>
+            </div>
         </div>
     );
 }
@@ -193,12 +198,14 @@ function ChatScreen({ me, otherUser, onBack }) {
 
     return (
         <div className="chat-body">
-            <div className="chat-header">
-                <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
+            <div className="panel-header">
+                <button className="icon-btn" onClick={onBack} aria-label="Back">
+                    <IconArrowLeftInline />
+                </button>
                 <Avatar username={otherUser.username} size="small" emoji={otherUser.avatarEmoji} />
                 <div>
-                    <div className="chat-title">{otherUser.name || otherUser.username}</div>
-                    <div className="chat-subtitle">@{otherUser.username}</div>
+                    <div className="panel-title">{otherUser.name || otherUser.username}</div>
+                    <div className="panel-subtitle">@{otherUser.username}</div>
                 </div>
             </div>
             <MainContainer>
@@ -216,7 +223,7 @@ function ChatScreen({ me, otherUser, onBack }) {
                             </div>
                         ))}
                     </MessageList>
-                    <MessageInput placeholder="Type a message" onSend={handleSend} />
+                    <MessageInput placeholder="Message" onSend={handleSend} />
                 </ChatContainer>
             </MainContainer>
             {menu && <ContextMenu x={menu.x} y={menu.y} onDelete={handleDelete} onClose={() => setMenu(null)} />}
@@ -235,7 +242,7 @@ function ChatsTab({ me }) {
                 otherUser ? (
                     <ChatScreen me={me} otherUser={otherUser} onBack={() => setOtherUser(null)} />
                 ) : (
-                    <DefaultPane icon="💬" text="Select a chat to start messaging" />
+                    <DefaultPane icon={<IconMessage width={40} height={40} />} text="Select a chat to start messaging" />
                 )
             }
         />
@@ -246,9 +253,9 @@ function SettingsTab({ me, onUpdate, onLogout }) {
     const [activeOption, setActiveOption] = useState(null);
 
     const options = [
-        { key: "profile", label: "Profile", icon: "👤" },
-        { key: "appearance", label: "Appearance", icon: "🎨" },
-        { key: "account", label: "Account", icon: "🚪" },
+        { key: "profile", label: "Profile", sub: "Name and avatar", icon: IconUser, tint: "violet" },
+        { key: "appearance", label: "Appearance", sub: "Theme", icon: IconPalette, tint: "teal" },
+        { key: "account", label: "Account", sub: "Log out", icon: IconLogOut, tint: "coral" },
     ];
 
     return (
@@ -256,19 +263,27 @@ function SettingsTab({ me, onUpdate, onLogout }) {
             hasSelection={!!activeOption}
             list={
                 <div className="settings-list">
-                    <div className="contact-list-header">
+                    <div className="panel-list-header">
                         <h2>Settings</h2>
                     </div>
-                    {options.map((opt) => (
-                        <button
-                            key={opt.key}
-                            className={`contact-row ${activeOption === opt.key ? "active-row" : ""}`}
-                            onClick={() => setActiveOption(opt.key)}
-                        >
-                            <div className="avatar-circle">{opt.icon}</div>
-                            <div className="contact-name">{opt.label}</div>
-                        </button>
-                    ))}
+                    {options.map((opt) => {
+                        const Icon = opt.icon;
+                        return (
+                            <button
+                                key={opt.key}
+                                className={`option-row ${activeOption === opt.key ? "active-row" : ""}`}
+                                onClick={() => setActiveOption(opt.key)}
+                            >
+                                <div className={`icon-tile tint-${opt.tint}`}>
+                                    <Icon width={18} height={18} />
+                                </div>
+                                <div>
+                                    <div className="option-label">{opt.label}</div>
+                                    <div className="option-sub">{opt.sub}</div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             }
             detail={
@@ -279,31 +294,43 @@ function SettingsTab({ me, onUpdate, onLogout }) {
                 ) : activeOption === "account" ? (
                     <AccountScreen onLogout={onLogout} onBack={() => setActiveOption(null)} />
                 ) : (
-                    <DefaultPane icon="⚙️" text="Choose a setting to configure it" />
+                    <DefaultPane icon={<IconSettings width={40} height={40} />} text="Choose a setting to configure it" />
                 )
             }
         />
     );
 }
 
+function IconArrowLeftInline(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" width="20" height="20" {...props}>
+            <path d="M19 12H5" />
+            <path d="M11 18l-6-6 6-6" />
+        </svg>
+    );
+}
+
 function BottomNav({ active, onChange }) {
     const tabs = [
-        { key: "chats", label: "Chats", icon: "💬" },
-        { key: "settings", label: "Settings", icon: "⚙️" },
+        { key: "chats", label: "Chats", icon: IconMessage },
+        { key: "settings", label: "Settings", icon: IconSettings },
     ];
 
     return (
         <nav className="bottom-nav">
-            {tabs.map((tab) => (
-                <button
-                    key={tab.key}
-                    className={`nav-tab ${active === tab.key ? "active" : ""}`}
-                    onClick={() => onChange(tab.key)}
-                >
-                    <span className="nav-icon">{tab.icon}</span>
-                    <span className="nav-label">{tab.label}</span>
-                </button>
-            ))}
+            {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                    <button
+                        key={tab.key}
+                        className={`nav-tab ${active === tab.key ? "active" : ""}`}
+                        onClick={() => onChange(tab.key)}
+                    >
+                        <Icon width={20} height={20} />
+                        <span className="nav-label">{tab.label}</span>
+                    </button>
+                );
+            })}
         </nav>
     );
 }
@@ -346,7 +373,7 @@ function App() {
         setActiveTab("chats");
     };
 
-    if (checkingSession) return <p style={{ padding: "2rem" }}>Loading...</p>;
+    if (checkingSession) return null;
     if (!me) return <LoginScreen onLogin={handleLogin} />;
 
     return (

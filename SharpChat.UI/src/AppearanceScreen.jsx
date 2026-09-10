@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconArrowLeft } from "./Icons";
 
 export default function AppearanceScreen({ onBack }) {
     const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
@@ -10,18 +11,18 @@ export default function AppearanceScreen({ onBack }) {
 
     return (
         <div className="settings-panel">
-            <div className="chat-header">
-                <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
-                <div className="chat-title">Appearance</div>
+            <div className="panel-header">
+                <button className="icon-btn" onClick={onBack} aria-label="Back"><IconArrowLeft width={20} height={20} /></button>
+                <div className="panel-title">Appearance</div>
             </div>
             <div className="settings-panel-body">
-                <div className="theme-row">
+                <div className="toggle-row">
                     <span>Dark mode</span>
                     <button
-                        className={`theme-toggle ${theme === "dark" ? "on" : ""}`}
+                        className={`switch ${theme === "dark" ? "on" : ""}`}
                         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                     >
-                        <span className="theme-toggle-knob" />
+                        <span className="switch-knob" />
                     </button>
                 </div>
             </div>

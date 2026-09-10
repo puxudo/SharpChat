@@ -1,12 +1,15 @@
+// AccountScreen.jsx
+import { IconArrowLeft } from "./Icons";
+
 export default function AccountScreen({ onLogout, onBack }) {
     return (
         <div className="settings-panel">
-            <div className="chat-header">
-                <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
-                <div className="chat-title">Account</div>
+            <div className="panel-header">
+                <button className="icon-btn" onClick={onBack} aria-label="Back"><IconArrowLeft width={20} height={20} /></button>
+                <div className="panel-title">Account</div>
             </div>
             <div className="settings-panel-body">
-                <button className="logout-btn" onClick={onLogout}>Log out</button>
+                <button className="danger-btn" onClick={onLogout}>Log out</button>
             </div>
         </div>
     );

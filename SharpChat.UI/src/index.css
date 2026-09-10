@@ -1,47 +1,43 @@
 :root {
-  --text: #a3a1ad;
-  --text-h: #f1eff7;
-  --bg: #101018;
-  --bg-raised: #17171f;
-  --bg-inset: #0c0c12;
-  --border: #2a2a36;
-  --accent: #9d7bff;
-  --accent-strong: #7c5cff;
-  --accent-bg: rgba(157, 123, 255, 0.12);
-  --accent-border: rgba(157, 123, 255, 0.4);
-  --danger: #ff6b6b;
-  --shadow:
-    rgba(0, 0, 0, 0.45) 0 20px 40px -12px, rgba(0, 0, 0, 0.3) 0 4px 12px -4px;
+  --text: #8b899b;
+  --text-h: #f2f1f6;
+  --bg: #0a0a0f;
+  --bg-raised: #131319;
+  --bg-inset: #0f0f14;
+  --border: rgba(255, 255, 255, 0.07);
+  --accent: #7c6cf0;
+  --accent-strong: #6a58e8;
+  --accent-bg: rgba(124, 108, 240, 0.12);
+  --danger: #ef5b5b;
+  --danger-bg: rgba(239, 91, 91, 0.12);
+  --teal: #3ec6c2;
+  --teal-bg: rgba(62, 198, 194, 0.12);
+  --coral: #e0824f;
+  --coral-bg: rgba(224, 130, 79, 0.12);
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --sans: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  font: 16px/145% var(--sans);
-  letter-spacing: 0.1px;
+  font: 15px/1.5 var(--sans);
+  letter-spacing: 0;
   color-scheme: dark;
   color: var(--text);
   background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 :root[data-theme="light"] {
-  --text: #5b5866;
+  --text: #6b6878;
   --text-h: #17171f;
-  --bg: #f5f5fa;
+  --bg: #fafafc;
   --bg-raised: #ffffff;
-  --bg-inset: #eceaf3;
-  --border: #dcd9e6;
-  --accent: #7c5cff;
-  --accent-strong: #6a46ff;
-  --accent-bg: rgba(124, 92, 255, 0.1);
-  --accent-border: rgba(124, 92, 255, 0.35);
-  --danger: #e0524f;
-  --shadow:
-    rgba(0, 0, 0, 0.12) 0 20px 40px -12px, rgba(0, 0, 0, 0.08) 0 4px 12px -4px;
+  --bg-inset: #f1f0f5;
+  --border: rgba(0, 0, 0, 0.08);
+  --accent: #6a58e8;
+  --accent-strong: #5a47db;
+  --accent-bg: rgba(106, 88, 232, 0.09);
+  --danger: #d64545;
+  --danger-bg: rgba(214, 69, 69, 0.08);
   color-scheme: light;
 }
 
@@ -59,23 +55,20 @@ html, body {
   height: 100dvh;
   min-height: 100dvh;
   margin: 0;
-  text-align: initial;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 h1, h2 {
-  font-family: var(--heading);
   font-weight: 600;
   color: var(--text-h);
+  letter-spacing: -0.01em;
 }
 
 h2 {
-  font-size: 22px;
-  line-height: 118%;
-  letter-spacing: -0.2px;
-  margin: 0 0 8px;
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 p {

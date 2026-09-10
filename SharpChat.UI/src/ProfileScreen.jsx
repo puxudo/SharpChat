@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { IconArrowLeft } from "./Icons";
 
 const API_BASE = import.meta.env.VITE_API_URL;
-
 const EMOJI_OPTIONS = ["😀", "😎", "🦊", "🐱", "🐶", "🐼", "🦁", "🐸", "🐙", "🌟", "🔥", "⚡"];
 
 export default function ProfileScreen({ me, onUpdate, onBack }) {
@@ -13,14 +13,12 @@ export default function ProfileScreen({ me, onUpdate, onBack }) {
     const handleSave = async () => {
         setSaving(true);
         setSaved(false);
-
         try {
             const res = await fetch(`${API_BASE}/api/users/${me.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, avatarEmoji }),
             });
-
             if (res.ok) {
                 onUpdate({ ...me, name, avatarEmoji });
                 setSaved(true);
@@ -33,29 +31,27 @@ export default function ProfileScreen({ me, onUpdate, onBack }) {
 
     return (
         <div className="settings-panel">
-            <div className="chat-header">
-                <button className="back-btn" onClick={onBack} aria-label="Back">&larr;</button>
-                <div className="chat-title">Profile</div>
+            <div className="panel-header">
+                <button className="icon-btn" onClick={onBack} aria-label="Back"><IconArrowLeft width={20} height={20} /></button>
+                <div className="panel-title">Profile</div>
             </div>
 
             <div className="settings-panel-body">
                 <div className="profile-avatar-preview">
-                    <span className="avatar-emoji-large">
-                        {avatarEmoji || me.username?.[0]?.toUpperCase()}
-                    </span>
+                    <span className="avatar-emoji-large">{avatarEmoji || me.username?.[0]?.toUpperCase()}</span>
                 </div>
 
-                <div className="profile-field">
+                <div className="field">
                     <label>Username</label>
                     <input value={me.username} disabled dir="auto" />
                 </div>
 
-                <div className="profile-field">
+                <div className="field">
                     <label>Name</label>
                     <input value={name} onChange={(e) => setName(e.target.value)} dir="auto" />
                 </div>
 
-                <div className="profile-field">
+                <div className="field">
                     <label>Avatar</label>
                     <div className="emoji-grid">
                         {EMOJI_OPTIONS.map((emoji) => (
@@ -70,8 +66,8 @@ export default function ProfileScreen({ me, onUpdate, onBack }) {
                     </div>
                 </div>
 
-                <button className="profile-save-btn" onClick={handleSave} disabled={saving}>
-                    {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
+                <button className="primary-btn" onClick={handleSave} disabled={saving}>
+                    {saving ? "Saving…" : saved ? "Saved" : "Save changes"}
                 </button>
             </div>
         </div>
