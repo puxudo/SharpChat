@@ -14,7 +14,7 @@ import ProfileScreen from "./ProfileScreen";
 import AppearanceScreen from "./AppearanceScreen";
 import AccountScreen from "./AccountScreen";
 import SplitPane from "./SplitPane";
-import { IconUser, IconPalette, IconLogOut, IconMessage, IconSettings } from "./Icons";
+import { IconUser, IconPalette, IconLogOut, IconMessage, IconSettings, IconArrowLeft, IconCheck, IconCheckDouble } from "./Icons";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -24,6 +24,10 @@ function colorForName(name) {
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function formatTime(iso) {
+    return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function Avatar({ username, size = "", emoji = null }) {
@@ -162,6 +166,12 @@ function ChatScreen({ me, otherUser, onBack }) {
             setMessages((prev) => prev.filter((m) => m.id !== id));
         });
 
+        connection.on("MessagesRead", (payload) => {
+            if (payload.senderId === me.id && payload.readerId === otherUser.id) {
+                setMessages((prev) => prev.map((m) => (m.senderId === me.id ? { ...m, isRead: true } : m)));
+            }
+        });
+
         connection.start().then(() => connection.invoke("JoinConversation", me.id));
         connectionRef.current = connection;
 
@@ -200,7 +210,7 @@ function ChatScreen({ me, otherUser, onBack }) {
         <div className="chat-body">
             <div className="panel-header">
                 <button className="icon-btn" onClick={onBack} aria-label="Back">
-                    <IconArrowLeftInline />
+                    <IconArrowLeft width={20} height={20} />
                 </button>
                 <Avatar username={otherUser.username} size="small" emoji={otherUser.avatarEmoji} />
                 <div>
@@ -211,17 +221,33 @@ function ChatScreen({ me, otherUser, onBack }) {
             <MainContainer>
                 <ChatContainer>
                     <MessageList>
-                        {messages.map((m) => (
-                            <div key={m.id} onContextMenu={(e) => handleContextMenu(e, m)}>
-                                <Message
-                                    model={{
-                                        message: m.content,
-                                        direction: m.senderId === me.id ? "outgoing" : "incoming",
-                                        position: "single",
-                                    }}
-                                />
-                            </div>
-                        ))}
+                        {messages.map((m) => {
+                            const mine = m.senderId === me.id;
+                            return (
+                                <div
+                                    key={m.id}
+                                    className={`message-row ${mine ? "outgoing" : "incoming"}`}
+                                    onContextMenu={(e) => handleContextMenu(e, m)}
+                                >
+                                    <Message
+                                        model={{
+                                            message: m.content,
+                                            direction: mine ? "outgoing" : "incoming",
+                                            position: "single",
+                                        }}
+                                    />
+                                    <div className="message-meta">
+                                        <span>{formatTime(m.sentAt)}</span>
+                                        {mine &&
+                                            (m.isRead ? (
+                                                <IconCheckDouble className="meta-read" width={14} height={14} />
+                                            ) : (
+                                                <IconCheck width={14} height={14} />
+                                            ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </MessageList>
                     <MessageInput placeholder="Message" onSend={handleSend} />
                 </ChatContainer>
@@ -298,15 +324,6 @@ function SettingsTab({ me, onUpdate, onLogout }) {
                 )
             }
         />
-    );
-}
-
-function IconArrowLeftInline(props) {
-    return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" width="20" height="20" {...props}>
-            <path d="M19 12H5" />
-            <path d="M11 18l-6-6 6-6" />
-        </svg>
     );
 }
 

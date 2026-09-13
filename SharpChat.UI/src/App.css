@@ -473,3 +473,27 @@
 }
 
 .danger-btn:hover { background: var(--danger-bg); }
+
+/* ---------- Message meta (time + read receipts) ---------- */
+
+.message-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2px;
+}
+
+.message-row.outgoing { align-items: flex-end; }
+.message-row.incoming { align-items: flex-start; }
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    color: var(--text);
+    margin: 2px 0.35rem 8px;
+}
+
+.message-meta .meta-read {
+    color: var(--accent);
+}
