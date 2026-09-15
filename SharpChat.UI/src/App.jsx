@@ -23,9 +23,7 @@ import {
     IconArrowLeft,
     IconCheck,
     IconCheckDouble,
-    IconPaperclip,
     IconFile,
-    IconReply,
     IconX,
 } from "./Icons";
 
@@ -408,15 +406,12 @@ function ChatScreen({ me, otherUser, onBack }) {
                         onCancel={() => setReplyingTo(null)}
                     />
                 )}
-                <div className="input-row">
-                    <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
-                    <button className="icon-btn attach-btn" onClick={() => fileInputRef.current?.click()} aria-label="Attach file">
-                        <IconPaperclip width={19} height={19} />
-                    </button>
-                    <div className="input-row-field">
-                        <MessageInput placeholder="Message" onSend={handleSend} attachButton={false} />
-                    </div>
-                </div>
+                <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
+                <MessageInput
+                    placeholder="Message"
+                    onSend={handleSend}
+                    onAttachClick={() => fileInputRef.current?.click()}
+                />
             </div>
 
             {menu && (
