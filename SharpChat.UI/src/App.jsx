@@ -14,8 +14,20 @@ import ProfileScreen from "./ProfileScreen";
 import AppearanceScreen from "./AppearanceScreen";
 import AccountScreen from "./AccountScreen";
 import SplitPane from "./SplitPane";
-import { IconUser, IconPalette, IconLogOut, IconMessage, IconSettings, IconArrowLeft, IconCheck, IconCheckDouble } from "./Icons";
-
+import {
+    IconUser,
+    IconPalette,
+    IconLogOut,
+    IconMessage,
+    IconSettings,
+    IconArrowLeft,
+    IconCheck,
+    IconCheckDouble,
+    IconPaperclip,
+    IconFile,
+    IconReply,
+    IconX,
+} from "./Icons";
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const AVATAR_COLORS = ["#7c6cf0", "#3ec6c2", "#e0824f", "#5eb87a", "#e0577a", "#4f9fe0"];
