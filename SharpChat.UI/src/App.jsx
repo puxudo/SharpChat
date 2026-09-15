@@ -221,33 +221,44 @@ function ChatScreen({ me, otherUser, onBack }) {
             <MainContainer>
                 <ChatContainer>
                     <MessageList>
-                        {messages.map((m) => {
-                            const mine = m.senderId === me.id;
-                            return (
-                                <div
-                                    key={m.id}
-                                    className={`message-row ${mine ? "outgoing" : "incoming"}`}
-                                    onContextMenu={(e) => handleContextMenu(e, m)}
-                                >
-                                    <Message
-                                        model={{
-                                            message: m.content,
-                                            direction: mine ? "outgoing" : "incoming",
-                                            position: "single",
-                                        }}
-                                    />
-                                    <div className="message-meta">
-                                        <span>{formatTime(m.sentAt)}</span>
-                                        {mine &&
-                                            (m.isRead ? (
-                                                <IconCheckDouble className="meta-read" width={14} height={14} />
-                                            ) : (
-                                                <IconCheck width={14} height={14} />
-                                            ))}
-                                    </div>
+                        {groupMessagesByDay(messages).map((group) => (
+                            <div key={group.label}>
+                                <div className="date-divider">
+                                    <span>{group.label}</span>
                                 </div>
-                            );
-                        })}
+                                {group.messages.map((m) => {
+                                    const mine = m.senderId === me.id;
+                                    return (
+                                        <div
+                                            key={m.id}
+                                            className={`message-row ${mine ? "outgoing" : "incoming"}`}
+                                            onContextMenu={(e) => handleContextMenu(e, m)}
+                                        >
+                                            {m.fileUrl ? (
+                                                <FileBubble message={m} mine={mine} />
+                                            ) : (
+                                                <Message
+                                                    model={{
+                                                        message: m.content,
+                                                        direction: mine ? "outgoing" : "incoming",
+                                                        position: "single",
+                                                    }}
+                                                />
+                                            )}
+                                            <div className="message-meta">
+                                                <span>{formatTime(m.sentAt)}</span>
+                                                {mine &&
+                                                    (m.isRead ? (
+                                                        <IconCheckDouble className="meta-read" width={14} height={14} />
+                                                    ) : (
+                                                        <IconCheck width={14} height={14} />
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
                     </MessageList>
                     <MessageInput placeholder="Message" onSend={handleSend} />
                 </ChatContainer>
@@ -325,6 +336,39 @@ function SettingsTab({ me, onUpdate, onLogout }) {
             }
         />
     );
+}
+
+function formatDateLabel(iso) {
+    const date = new Date(iso);
+    const now = new Date();
+
+    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayDiff = (startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24);
+
+    if (dayDiff === 0) return "Today";
+    if (dayDiff === 1) return "Yesterday";
+    if (dayDiff > 1 && dayDiff < 7) {
+        return date.toLocaleDateString([], { weekday: "long" });
+    }
+    return date.toLocaleDateString([], { month: "long", day: "numeric" });
+}
+
+function groupMessagesByDay(messages) {
+    const groups = [];
+    let currentLabel = null;
+    let currentGroup = null;
+
+    for (const message of messages) {
+        const label = formatDateLabel(message.sentAt);
+        if (label !== currentLabel) {
+            currentLabel = label;
+            currentGroup = { label, messages: [] };
+            groups.push(currentGroup);
+        }
+        currentGroup.messages.push(message);
+    }
+
+    return groups;
 }
 
 function BottomNav({ active, onChange }) {

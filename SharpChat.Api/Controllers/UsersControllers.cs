@@ -27,7 +27,9 @@ namespace SharpChat.Api.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
         {
-            var usernameTaken = await _db.Users.AnyAsync(u => u.Username == request.Username);
+            var normalized = request.Username.Trim().ToUpperInvariant();
+
+            var usernameTaken = await _db.Users.AnyAsync(u => u.NormalizedUsername == normalized);
             if (usernameTaken)
             {
                 return Conflict("That username is already taken.");
@@ -36,7 +38,8 @@ namespace SharpChat.Api.Controllers
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                Username = request.Username,
+                Username = request.Username.Trim(),
+                NormalizedUsername = normalized,
                 Name = request.Name,
             };
 
@@ -53,7 +56,8 @@ namespace SharpChat.Api.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+            var normalized = request.Username.Trim().ToUpperInvariant();
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.NormalizedUsername == normalized);
 
             if (user is null)
             {
@@ -102,8 +106,10 @@ namespace SharpChat.Api.Controllers
                 return Ok(new List<UserDto>());
             }
 
+            var normalized = username.Trim().ToUpperInvariant();
+
             var users = await _db
-                .Users.Where(u => u.Username.Contains(username))
+                .Users.Where(u => u.NormalizedUsername!.Contains(normalized))
                 .Take(20)
                 .ToListAsync();
 

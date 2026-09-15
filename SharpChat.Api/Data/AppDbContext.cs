@@ -15,7 +15,7 @@ namespace SharpChat.Api.Data
         {
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(u => u.Username).IsUnique();
+                entity.HasIndex(u => u.NormalizedUsername).IsUnique();
             });
 
             modelBuilder.Entity<Message>(entity =>
