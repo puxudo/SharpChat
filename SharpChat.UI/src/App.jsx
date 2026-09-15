@@ -28,6 +28,7 @@ import {
     IconReply,
     IconX,
 } from "./Icons";
+
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const AVATAR_COLORS = ["#7c6cf0", "#3ec6c2", "#e0824f", "#5eb87a", "#e0577a", "#4f9fe0"];
@@ -40,6 +41,39 @@ function colorForName(name) {
 
 function formatTime(iso) {
     return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDateLabel(iso) {
+    const date = new Date(iso);
+    const now = new Date();
+
+    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayDiff = (startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24);
+
+    if (dayDiff === 0) return "Today";
+    if (dayDiff === 1) return "Yesterday";
+    if (dayDiff > 1 && dayDiff < 7) {
+        return date.toLocaleDateString([], { weekday: "long" });
+    }
+    return date.toLocaleDateString([], { month: "long", day: "numeric" });
+}
+
+function groupMessagesByDay(messages) {
+    const groups = [];
+    let currentLabel = null;
+    let currentGroup = null;
+
+    for (const message of messages) {
+        const label = formatDateLabel(message.sentAt);
+        if (label !== currentLabel) {
+            currentLabel = label;
+            currentGroup = { label, messages: [] };
+            groups.push(currentGroup);
+        }
+        currentGroup.messages.push(message);
+    }
+
+    return groups;
 }
 
 function Avatar({ username, size = "", emoji = null }) {
@@ -146,6 +180,27 @@ function ContextMenu({ x, y, canDelete, onReply, onDelete, onClose }) {
         </div>
     );
 }
+
+function FileBubble({ message, mine }) {
+    const isImage = message.fileType?.startsWith("image/");
+
+    return (
+        <div className={`file-bubble ${mine ? "outgoing" : "incoming"}`}>
+            {isImage ? (
+                <a href={message.fileUrl} target="_blank" rel="noreferrer">
+                    <img src={message.fileUrl} alt={message.fileName} className="file-bubble-image" />
+                </a>
+            ) : (
+                <a href={message.fileUrl} target="_blank" rel="noreferrer" className="file-bubble-doc">
+                    <IconFile width={22} height={22} />
+                    <span>{message.fileName}</span>
+                </a>
+            )}
+            {message.content && <div className="file-bubble-caption">{message.content}</div>}
+        </div>
+    );
+}
+
 function ReplyPreview({ message, mine, otherUserName, onCancel }) {
     return (
         <div className="reply-preview">
@@ -286,6 +341,7 @@ function ChatScreen({ me, otherUser, onBack }) {
                     <div className="panel-subtitle">@{otherUser.username}</div>
                 </div>
             </div>
+
             <MainContainer>
                 <ChatContainer>
                     <MessageList>
@@ -340,28 +396,29 @@ function ChatScreen({ me, otherUser, onBack }) {
                             </div>
                         ))}
                     </MessageList>
-
-                    <div className="composer">
-                        {replyingTo && (
-                            <ReplyPreview
-                                message={replyingTo}
-                                mine={replyingTo.senderId === me.id}
-                                otherUserName={otherUser.name || otherUser.username}
-                                onCancel={() => setReplyingTo(null)}
-                            />
-                        )}
-                        <div className="input-row">
-                            <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
-                            <button className="icon-btn attach-btn" onClick={() => fileInputRef.current?.click()} aria-label="Attach file">
-                                <IconPaperclip width={19} height={19} />
-                            </button>
-                            <div className="input-row-field">
-                                <MessageInput placeholder="Message" onSend={handleSend} />
-                            </div>
-                        </div>
-                    </div>
                 </ChatContainer>
             </MainContainer>
+
+            <div className="composer">
+                {replyingTo && (
+                    <ReplyPreview
+                        message={replyingTo}
+                        mine={replyingTo.senderId === me.id}
+                        otherUserName={otherUser.name || otherUser.username}
+                        onCancel={() => setReplyingTo(null)}
+                    />
+                )}
+                <div className="input-row">
+                    <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
+                    <button className="icon-btn attach-btn" onClick={() => fileInputRef.current?.click()} aria-label="Attach file">
+                        <IconPaperclip width={19} height={19} />
+                    </button>
+                    <div className="input-row-field">
+                        <MessageInput placeholder="Message" onSend={handleSend} />
+                    </div>
+                </div>
+            </div>
+
             {menu && (
                 <ContextMenu
                     x={menu.x}
@@ -444,39 +501,6 @@ function SettingsTab({ me, onUpdate, onLogout }) {
             }
         />
     );
-}
-
-function formatDateLabel(iso) {
-    const date = new Date(iso);
-    const now = new Date();
-
-    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const dayDiff = (startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24);
-
-    if (dayDiff === 0) return "Today";
-    if (dayDiff === 1) return "Yesterday";
-    if (dayDiff > 1 && dayDiff < 7) {
-        return date.toLocaleDateString([], { weekday: "long" });
-    }
-    return date.toLocaleDateString([], { month: "long", day: "numeric" });
-}
-
-function groupMessagesByDay(messages) {
-    const groups = [];
-    let currentLabel = null;
-    let currentGroup = null;
-
-    for (const message of messages) {
-        const label = formatDateLabel(message.sentAt);
-        if (label !== currentLabel) {
-            currentLabel = label;
-            currentGroup = { label, messages: [] };
-            groups.push(currentGroup);
-        }
-        currentGroup.messages.push(message);
-    }
-
-    return groups;
 }
 
 function BottomNav({ active, onChange }) {
