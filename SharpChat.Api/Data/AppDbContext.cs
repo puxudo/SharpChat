@@ -21,6 +21,11 @@ namespace SharpChat.Api.Data
             modelBuilder.Entity<Message>(entity =>
             {
                 entity
+                    .HasOne(m => m.ReplyToMessage)
+                    .WithMany()
+                    .HasForeignKey(m => m.ReplyToMessageId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity
                     .HasOne(m => m.Sender)
                     .WithMany()
                     .HasForeignKey(m => m.SenderId)

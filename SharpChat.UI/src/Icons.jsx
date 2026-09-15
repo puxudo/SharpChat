@@ -80,3 +80,21 @@ export function IconCheckDouble(props) {
         </svg>
     );
 }
+
+export function IconReply(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M9 17l-6-6 6-6" />
+            <path d="M3 11h11a6 6 0 0 1 6 6v2" />
+        </svg>
+    );
+}
+
+export function IconX(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M18 6L6 18" />
+            <path d="M6 6l12 12" />
+        </svg>
+    );
+}

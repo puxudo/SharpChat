@@ -114,7 +114,7 @@ function LoginScreen({ onLogin }) {
     );
 }
 
-function ContextMenu({ x, y, onDelete, onClose }) {
+function ContextMenu({ x, y, canDelete, onReply, onDelete, onClose }) {
     const ref = useRef(null);
 
     useEffect(() => {
@@ -127,9 +127,28 @@ function ContextMenu({ x, y, onDelete, onClose }) {
 
     return (
         <div ref={ref} className="context-menu" style={{ top: y, left: x }}>
-            <button className="context-menu-item danger" onClick={onDelete}>
-                Delete message
-            </button>
+            <button className="context-menu-item" onClick={onReply}>Reply</button>
+            {canDelete && (
+                <button className="context-menu-item danger" onClick={onDelete}>Delete message</button>
+            )}
+        </div>
+    );
+}
+function ReplyPreview({ message, mine, otherUserName, onCancel }) {
+    return (
+        <div className="reply-preview">
+            <div className="reply-preview-bar" />
+            <div className="reply-preview-body">
+                <div className="reply-preview-name">{mine ? "You" : otherUserName}</div>
+                <div className="reply-preview-text">
+                    {message.fileUrl ? `📎 ${message.fileName}` : message.content}
+                </div>
+            </div>
+            {onCancel && (
+                <button className="icon-btn" onClick={onCancel} aria-label="Cancel reply">
+                    <IconX width={16} height={16} />
+                </button>
+            )}
         </div>
     );
 }
@@ -137,7 +156,11 @@ function ContextMenu({ x, y, onDelete, onClose }) {
 function ChatScreen({ me, otherUser, onBack }) {
     const [messages, setMessages] = useState([]);
     const [menu, setMenu] = useState(null);
+    const [replyingTo, setReplyingTo] = useState(null);
     const connectionRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    const findMessage = (id) => messages.find((m) => m.id === id);
 
     const markRead = () => {
         fetch(`${API_BASE}/api/messages/mark-read?userId=${me.id}&otherUserId=${otherUser.id}`, { method: "POST" });
@@ -183,20 +206,53 @@ function ChatScreen({ me, otherUser, onBack }) {
             const res = await fetch(`${API_BASE}/api/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ senderId: me.id, recipientId: otherUser.id, content: text }),
+                body: JSON.stringify({
+                    senderId: me.id,
+                    recipientId: otherUser.id,
+                    content: text,
+                    replyToMessageId: replyingTo?.id ?? null,
+                }),
             });
             if (!res.ok) return;
             const savedMessage = await res.json();
             setMessages((prev) => [...prev, savedMessage]);
+            setReplyingTo(null);
         } catch (err) {
             console.error("Send threw an error:", err);
         }
     };
 
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        e.target.value = "";
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("senderId", me.id);
+        formData.append("recipientId", otherUser.id);
+        formData.append("file", file);
+
+        try {
+            const res = await fetch(`${API_BASE}/api/messages/upload`, { method: "POST", body: formData });
+            if (!res.ok) {
+                console.error("Upload failed:", res.status, await res.text());
+                return;
+            }
+            const savedMessage = await res.json();
+            setMessages((prev) => [...prev, savedMessage]);
+        } catch (err) {
+            console.error("Upload threw an error:", err);
+        }
+    };
+
     const handleContextMenu = (e, message) => {
         e.preventDefault();
-        if (message.senderId !== me.id) return;
         setMenu({ x: e.clientX, y: e.clientY, message });
+    };
+
+    const handleReply = () => {
+        setReplyingTo(menu.message);
+        setMenu(null);
     };
 
     const handleDelete = async () => {
@@ -223,28 +279,40 @@ function ChatScreen({ me, otherUser, onBack }) {
                     <MessageList>
                         {groupMessagesByDay(messages).map((group) => (
                             <div key={group.label}>
-                                <div className="date-divider">
-                                    <span>{group.label}</span>
-                                </div>
+                                <div className="date-divider"><span>{group.label}</span></div>
                                 {group.messages.map((m) => {
                                     const mine = m.senderId === me.id;
+                                    const repliedMessage = m.replyToMessageId ? findMessage(m.replyToMessageId) : null;
+
                                     return (
                                         <div
                                             key={m.id}
                                             className={`message-row ${mine ? "outgoing" : "incoming"}`}
                                             onContextMenu={(e) => handleContextMenu(e, m)}
                                         >
-                                            {m.fileUrl ? (
-                                                <FileBubble message={m} mine={mine} />
-                                            ) : (
-                                                <Message
-                                                    model={{
-                                                        message: m.content,
-                                                        direction: mine ? "outgoing" : "incoming",
-                                                        position: "single",
-                                                    }}
-                                                />
-                                            )}
+                                            <div className={`bubble-wrap ${mine ? "outgoing" : "incoming"}`}>
+                                                {repliedMessage && (
+                                                    <div className="quoted-reply">
+                                                        <div className="quoted-reply-name">
+                                                            {repliedMessage.senderId === me.id ? "You" : otherUser.name || otherUser.username}
+                                                        </div>
+                                                        <div className="quoted-reply-text">
+                                                            {repliedMessage.fileUrl ? `📎 ${repliedMessage.fileName}` : repliedMessage.content}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {m.fileUrl ? (
+                                                    <FileBubble message={m} mine={mine} />
+                                                ) : (
+                                                    <Message
+                                                        model={{
+                                                            message: m.content,
+                                                            direction: mine ? "outgoing" : "incoming",
+                                                            position: "single",
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
                                             <div className="message-meta">
                                                 <span>{formatTime(m.sentAt)}</span>
                                                 {mine &&
@@ -260,10 +328,38 @@ function ChatScreen({ me, otherUser, onBack }) {
                             </div>
                         ))}
                     </MessageList>
-                    <MessageInput placeholder="Message" onSend={handleSend} />
+
+                    <div className="composer">
+                        {replyingTo && (
+                            <ReplyPreview
+                                message={replyingTo}
+                                mine={replyingTo.senderId === me.id}
+                                otherUserName={otherUser.name || otherUser.username}
+                                onCancel={() => setReplyingTo(null)}
+                            />
+                        )}
+                        <div className="input-row">
+                            <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
+                            <button className="icon-btn attach-btn" onClick={() => fileInputRef.current?.click()} aria-label="Attach file">
+                                <IconPaperclip width={19} height={19} />
+                            </button>
+                            <div className="input-row-field">
+                                <MessageInput placeholder="Message" onSend={handleSend} />
+                            </div>
+                        </div>
+                    </div>
                 </ChatContainer>
             </MainContainer>
-            {menu && <ContextMenu x={menu.x} y={menu.y} onDelete={handleDelete} onClose={() => setMenu(null)} />}
+            {menu && (
+                <ContextMenu
+                    x={menu.x}
+                    y={menu.y}
+                    canDelete={menu.message.senderId === me.id}
+                    onReply={handleReply}
+                    onDelete={handleDelete}
+                    onClose={() => setMenu(null)}
+                />
+            )}
         </div>
     );
 }

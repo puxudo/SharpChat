@@ -37,12 +37,12 @@ namespace SharpChat.Api.Controllers
                 SenderId = request.SenderId,
                 RecipientId = request.RecipientId,
                 Content = request.Content,
+                ReplyToMessageId = request.ReplyToMessageId,
             };
-            // pushing the message on db
+
             _db.Messages.Add(message);
             await _db.SaveChangesAsync();
 
-            //pushing real-time event to the recipient's signalR group
             await _hubContext
                 .Clients.Group(request.RecipientId.ToString())
                 .SendAsync("ReceiveMessage", message);
@@ -150,6 +150,11 @@ namespace SharpChat.Api.Controllers
             DateTime? LastMessageAt
         );
 
-        public record SendMessageRequest(Guid SenderId, Guid RecipientId, string Content);
+        public record SendMessageRequest(
+            Guid SenderId,
+            Guid RecipientId,
+            string Content,
+            Guid? ReplyToMessageId
+        );
     }
 }
