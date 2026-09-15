@@ -538,8 +538,101 @@
     white-space: nowrap;
 }
 
-.composer { flex: 0 0 auto; }
+.composer {
+    flex: 0 0 auto;
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    padding: 0.6rem 0.75rem;
+}
 
+.composer-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.3rem;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.3rem 0.4rem 0.3rem 0.5rem;
+}
+
+.composer-input {
+    flex: 1;
+    min-width: 0;
+    resize: none;
+    border: none;
+    background: none;
+    outline: none;
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 0.4rem 0.2rem;
+    max-height: 120px;
+    overflow-y: auto;
+    text-align: start;
+    unicode-bidi: plaintext;
+}
+
+.composer-input::placeholder {
+    color: var(--text);
+}
+
+.composer-emoji-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.emoji-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.25rem;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.5rem;
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+}
+
+.emoji-popover-item {
+    border: none;
+    background: none;
+    font-size: 1.15rem;
+    padding: 0.3rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.emoji-popover-item:hover {
+    background: var(--bg-inset);
+}
+
+.send-btn {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: pop-in 0.12s ease-out;
+}
+
+.send-btn:hover {
+    background: var(--accent-strong);
+}
+
+@keyframes pop-in {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
 .reply-preview {
     display: flex;
     align-items: center;

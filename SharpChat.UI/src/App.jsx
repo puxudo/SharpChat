@@ -5,7 +5,6 @@ import {
     ChatContainer,
     MessageList,
     Message,
-    MessageInput,
 } from "@chatscope/chat-ui-kit-react";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./App.css";
@@ -25,11 +24,20 @@ import {
     IconCheckDouble,
     IconFile,
     IconX,
+    IconPaperclip,
+    IconSmile,
+    IconSend,
 } from "./Icons";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const AVATAR_COLORS = ["#7c6cf0", "#3ec6c2", "#e0824f", "#5eb87a", "#e0577a", "#4f9fe0"];
+
+const QUICK_EMOJIS = [
+    "😀", "😂", "😍", "😢", "😮", "😡", "👍", "👎",
+    "❤️", "🔥", "🎉", "🙏", "😎", "🤔", "😴", "🥳",
+    "😭", "💯", "✨", "🙌", "👏", "🤝", "😅", "😇",
+];
 
 function colorForName(name) {
     let hash = 0;
@@ -218,6 +226,92 @@ function ReplyPreview({ message, mine, otherUserName, onCancel }) {
     );
 }
 
+function Composer({ onSend, onAttachClick, replySlot }) {
+    const [text, setText] = useState("");
+    const [showEmoji, setShowEmoji] = useState(false);
+    const emojiRef = useRef(null);
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        const handleOutside = (e) => {
+            if (emojiRef.current && !emojiRef.current.contains(e.target)) setShowEmoji(false);
+        };
+        window.addEventListener("mousedown", handleOutside);
+        return () => window.removeEventListener("mousedown", handleOutside);
+    }, []);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [text]);
+
+    const handleSubmit = () => {
+        const trimmed = text.trim();
+        if (!trimmed) return;
+        onSend(trimmed);
+        setText("");
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+        }
+    };
+
+    return (
+        <div className="composer">
+            {replySlot}
+            <div className="composer-bar">
+                <button className="icon-btn" onClick={onAttachClick} aria-label="Attach file">
+                    <IconPaperclip width={20} height={20} />
+                </button>
+
+                <textarea
+                    ref={textareaRef}
+                    className="composer-input"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Write a message..."
+                    rows={1}
+                    dir="auto"
+                />
+
+                <div className="composer-emoji-wrap" ref={emojiRef}>
+                    <button className="icon-btn" onClick={() => setShowEmoji((v) => !v)} aria-label="Emoji">
+                        <IconSmile width={20} height={20} />
+                    </button>
+                    {showEmoji && (
+                        <div className="emoji-popover">
+                            {QUICK_EMOJIS.map((emoji) => (
+                                <button
+                                    key={emoji}
+                                    className="emoji-popover-item"
+                                    onClick={() => {
+                                        setText((t) => t + emoji);
+                                        setShowEmoji(false);
+                                    }}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {text.trim() && (
+                    <button className="send-btn" onClick={handleSubmit} aria-label="Send">
+                        <IconSend width={18} height={18} />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function ChatScreen({ me, otherUser, onBack }) {
     const [messages, setMessages] = useState([]);
     const [menu, setMenu] = useState(null);
@@ -397,22 +491,21 @@ function ChatScreen({ me, otherUser, onBack }) {
                 </ChatContainer>
             </MainContainer>
 
-            <div className="composer">
-                {replyingTo && (
-                    <ReplyPreview
-                        message={replyingTo}
-                        mine={replyingTo.senderId === me.id}
-                        otherUserName={otherUser.name || otherUser.username}
-                        onCancel={() => setReplyingTo(null)}
-                    />
-                )}
-                <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
-                <MessageInput
-                    placeholder="Message"
-                    onSend={handleSend}
-                    onAttachClick={() => fileInputRef.current?.click()}
-                />
-            </div>
+            <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
+            <Composer
+                onSend={handleSend}
+                onAttachClick={() => fileInputRef.current?.click()}
+                replySlot={
+                    replyingTo && (
+                        <ReplyPreview
+                            message={replyingTo}
+                            mine={replyingTo.senderId === me.id}
+                            otherUserName={otherUser.name || otherUser.username}
+                            onCancel={() => setReplyingTo(null)}
+                        />
+                    )
+                }
+            />
 
             {menu && (
                 <ContextMenu
