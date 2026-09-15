@@ -414,7 +414,7 @@ function ChatScreen({ me, otherUser, onBack }) {
                         <IconPaperclip width={19} height={19} />
                     </button>
                     <div className="input-row-field">
-                        <MessageInput placeholder="Message" onSend={handleSend} />
+                        <MessageInput placeholder="Message" onSend={handleSend} attachButton={false} />
                     </div>
                 </div>
             </div>
